@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { signOut } from "@/auth";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -41,9 +42,20 @@ export default async function Home() {
               {user.role === "owner" ? "Owner" : "Viewer"}
             </Badge>
           </p>
-          <p className="mt-4 text-sm text-muted-foreground">
-            Das Fundament steht. Als Nächstes: Bücher erfassen (Phase 2).
-          </p>
+          <div className="mt-6 flex flex-wrap gap-2">
+            <Button nativeButton={false} render={<Link href="/books" />}>
+              📚 Bestand ansehen
+            </Button>
+            {user.role === "owner" ? (
+              <Button
+                variant="outline"
+                nativeButton={false}
+                render={<Link href="/books/new" />}
+              >
+                + Buch erfassen
+              </Button>
+            ) : null}
+          </div>
         </CardContent>
       </Card>
     </main>
