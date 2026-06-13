@@ -84,13 +84,48 @@ export async function updateFurnitureAction(formData: FormData): Promise<void> {
   const color = String(formData.get("color") ?? "").trim();
   const roomId = String(formData.get("roomId") ?? "");
   if (!id) return;
-  const patch: { name?: string; color?: string } = {};
+
+  const shelf = await db.query.shelves.findFirst({ where: eq(shelves.id, id) });
+  if (!shelf) return;
+
+  const patch: {
+    name?: string;
+    color?: string;
+    columns?: number;
+    rows?: number;
+  } = {};
   if (name) patch.name = name;
   if (color) patch.color = color;
+
+  // Optional resize: regenerate the compartment grid when dimensions change.
+  const hasCols = formData.get("columns") != null;
+  const hasRows = formData.get("rows") != null;
+  if (hasCols || hasRows) {
+    const columns = hasCols
+      ? clampGrid(Number(formData.get("columns")), 12)
+      : (shelf.columns ?? 1);
+    const rows = hasRows
+      ? clampGrid(Number(formData.get("rows")), 12)
+      : (shelf.rows ?? 1);
+    if (columns !== shelf.columns || rows !== shelf.rows) {
+      patch.columns = columns;
+      patch.rows = rows;
+      // Books in removed compartments fall back to the stack (FK set null).
+      await db.delete(compartments).where(eq(compartments.shelfId, id));
+      const cells = [];
+      for (let row = 0; row < rows; row++) {
+        for (let col = 0; col < columns; col++) {
+          cells.push({ shelfId: id, row, col, sortIndex: row * columns + col });
+        }
+      }
+      if (cells.length) await db.insert(compartments).values(cells);
+    }
+  }
+
   if (Object.keys(patch).length) {
     await db.update(shelves).set(patch).where(eq(shelves.id, id));
-    if (roomId) revalidatePath(`/rooms/${roomId}`);
   }
+  if (roomId) revalidatePath(`/rooms/${roomId}`);
 }
 
 export async function deleteFurnitureAction(formData: FormData): Promise<void> {

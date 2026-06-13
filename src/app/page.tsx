@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { signOut } from "@/auth";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -15,20 +14,8 @@ export default async function Home() {
   const user = await requireUser();
 
   return (
-    <main className="mx-auto flex min-h-svh max-w-2xl flex-col gap-6 p-8">
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold">📚 Bücherwurm</h1>
-        <form
-          action={async () => {
-            "use server";
-            await signOut({ redirectTo: "/login" });
-          }}
-        >
-          <Button type="submit" variant="outline" size="sm">
-            Abmelden
-          </Button>
-        </form>
-      </div>
+    <main className="mx-auto flex w-full max-w-2xl flex-col gap-6 p-6 sm:p-8">
+      <h1 className="text-3xl font-bold">📚 Bücherwurm</h1>
 
       <Card>
         <CardHeader>

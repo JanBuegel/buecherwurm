@@ -14,16 +14,11 @@ import {
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useOptimistic, useRef, useState, useTransition } from "react";
-import { Button } from "@/components/ui/button";
-import { ConfirmButton } from "@/app/settings/ui";
 import { compartmentAspect } from "@/lib/furniture";
-import {
-  deleteFurnitureAction,
-  placeCopyAction,
-  updateFurnitureAction,
-} from "../actions";
+import { placeCopyAction } from "../actions";
 import { Spine, type SpineCopy } from "../spine";
 import { AddFurnitureForm } from "./add-furniture-form";
+import { FurnitureEditor } from "./furniture-editor";
 
 type Comp = { id: string; row: number; col: number };
 type Furniture = {
@@ -185,55 +180,44 @@ function FurniturePiece({
       <div className="flex flex-wrap items-center gap-2">
         <h2 className="font-semibold">{f.name}</h2>
         {isOwner ? (
-          <div className="flex items-center gap-1">
-            <form action={updateFurnitureAction} className="flex items-center gap-1">
-              <input type="hidden" name="id" value={f.id} />
-              <input type="hidden" name="roomId" value={roomId} />
-              <input
-                type="color"
-                name="color"
-                defaultValue={color}
-                className="h-7 w-8 cursor-pointer rounded border bg-transparent p-0.5"
-                aria-label="Möbelfarbe"
-              />
-              <Button type="submit" size="xs" variant="ghost">
-                Farbe
-              </Button>
-            </form>
-            <ConfirmButton
-              action={deleteFurnitureAction}
-              id={f.id}
-              extraFields={{ roomId }}
-              size="xs"
-            />
-          </div>
+          <FurnitureEditor
+            id={f.id}
+            roomId={roomId}
+            name={f.name}
+            color={color}
+            columns={f.columns}
+            rows={f.rows}
+          />
         ) : null}
       </div>
 
-      <div
-        className="inline-block w-fit rounded-lg p-2.5 shadow-xl ring-1 ring-black/20"
-        style={{
-          backgroundColor: color,
-          backgroundImage:
-            "linear-gradient(180deg, rgba(255,255,255,.14), rgba(0,0,0,.20)), repeating-linear-gradient(90deg, rgba(0,0,0,.05) 0 7px, rgba(255,255,255,.04) 7px 14px)",
-        }}
-      >
+      {/* horizontal scroll keeps wide furniture usable on small screens */}
+      <div className="-mx-1 overflow-x-auto px-1 pb-1">
         <div
-          className="grid gap-2"
-          style={{ gridTemplateColumns: `repeat(${f.columns}, ${cellW}px)` }}
+          className="inline-block w-fit rounded-lg p-2.5 shadow-xl ring-1 ring-black/20"
+          style={{
+            backgroundColor: color,
+            backgroundImage:
+              "linear-gradient(180deg, rgba(255,255,255,.14), rgba(0,0,0,.20)), repeating-linear-gradient(90deg, rgba(0,0,0,.05) 0 7px, rgba(255,255,255,.04) 7px 14px)",
+          }}
         >
-          {f.compartments.map((c) => (
-            <Compartment key={c.id} compartmentId={c.id} height={cellH}>
-              {copiesByCompartment(c.id).map((copy) => (
-                <DraggableSpine
-                  key={copy.id}
-                  copy={copy}
-                  enabled={draggable}
-                  onOpen={onOpen}
-                />
-              ))}
-            </Compartment>
-          ))}
+          <div
+            className="grid gap-2"
+            style={{ gridTemplateColumns: `repeat(${f.columns}, ${cellW}px)` }}
+          >
+            {f.compartments.map((c) => (
+              <Compartment key={c.id} compartmentId={c.id} height={cellH}>
+                {copiesByCompartment(c.id).map((copy) => (
+                  <DraggableSpine
+                    key={copy.id}
+                    copy={copy}
+                    enabled={draggable}
+                    onOpen={onOpen}
+                  />
+                ))}
+              </Compartment>
+            ))}
+          </div>
         </div>
       </div>
     </section>

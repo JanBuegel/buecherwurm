@@ -33,7 +33,14 @@ export default async function RoomDetailPage({
       where: eq(copies.roomId, id),
       orderBy: asc(copies.position),
       with: {
-        book: { columns: { title: true, authors: true, pageCount: true } },
+        book: {
+          columns: {
+            title: true,
+            subtitle: true,
+            authors: true,
+            pageCount: true,
+          },
+        },
       },
     }),
   ]);
@@ -59,6 +66,7 @@ export default async function RoomDetailPage({
         id: c.id,
         compartmentId: c.compartmentId,
         title: c.book.title,
+        subtitle: c.book.subtitle,
         author: c.book.authors?.[0] ?? null,
         pageCount: c.book.pageCount,
         spineColor: c.spineColor,
