@@ -14,7 +14,7 @@ import {
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useOptimistic, useRef, useState, useTransition } from "react";
-import { compartmentAspect } from "@/lib/furniture";
+import { spineWidthPx } from "@/lib/spine";
 import { placeCopyAction } from "../actions";
 import { Spine, type SpineCopy } from "../spine";
 import { AddFurnitureForm } from "./add-furniture-form";
@@ -142,7 +142,7 @@ export function RoomView({
 
         <DragOverlay>
           {activeCopy ? (
-            <div className="h-28">
+            <div className="h-28" style={{ width: spineWidthPx(activeCopy.pageCount) }}>
               <Spine copy={activeCopy} />
             </div>
           ) : null}
@@ -172,8 +172,10 @@ function FurniturePiece({
   onOpen: (id: string) => void;
 }) {
   const color = f.color ?? "#b08968";
-  const cellH = f.kind === "kallax" ? 128 : 96;
-  const cellW = Math.round(cellH * compartmentAspect(f.kind));
+  const cellH = f.kind === "kallax" ? 132 : 104;
+  // Compartments fill the available width (min per column so they stay roomy);
+  // many books then shrink to fit inside each compartment.
+  const minCol = f.kind === "kallax" ? 150 : 210;
 
   return (
     <section className="flex flex-col gap-2">
@@ -194,7 +196,7 @@ function FurniturePiece({
       {/* horizontal scroll keeps wide furniture usable on small screens */}
       <div className="-mx-1 overflow-x-auto px-1 pb-1">
         <div
-          className="inline-block w-fit rounded-lg p-2.5 shadow-xl ring-1 ring-black/20"
+          className="w-fit min-w-full rounded-lg p-2.5 shadow-xl ring-1 ring-black/20"
           style={{
             backgroundColor: color,
             backgroundImage:
@@ -203,7 +205,9 @@ function FurniturePiece({
         >
           <div
             className="grid gap-2"
-            style={{ gridTemplateColumns: `repeat(${f.columns}, ${cellW}px)` }}
+            style={{
+              gridTemplateColumns: `repeat(${f.columns}, minmax(${minCol}px, 1fr))`,
+            }}
           >
             {f.compartments.map((c) => (
               <Compartment key={c.id} compartmentId={c.id} height={cellH}>
@@ -279,9 +283,13 @@ function Stack({
           </span>
         ) : (
           copies.map((copy) => (
-            <div key={copy.id} className="h-24">
-              <DraggableSpine copy={copy} enabled={draggable} onOpen={onOpen} />
-            </div>
+            <DraggableSpine
+              key={copy.id}
+              copy={copy}
+              enabled={draggable}
+              onOpen={onOpen}
+              height={96}
+            />
           ))
         )}
       </div>
@@ -295,10 +303,12 @@ function DraggableSpine({
   copy,
   enabled,
   onOpen,
+  height,
 }: {
   copy: Copy;
   enabled: boolean;
   onOpen: (id: string) => void;
+  height?: number;
 }) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: copy.id,
@@ -310,8 +320,17 @@ function DraggableSpine({
       {...(enabled ? listeners : {})}
       {...attributes}
       onClick={() => onOpen(copy.id)}
-      style={{ touchAction: "none" }}
-      className="h-full"
+      style={{
+        // Natural width when there's room; shrinks toward a readable minimum
+        // as a compartment fills up. Beyond that the compartment scrolls.
+        flexBasis: spineWidthPx(copy.pageCount),
+        flexGrow: 0,
+        flexShrink: 1,
+        minWidth: 14,
+        height,
+        touchAction: "none",
+      }}
+      className={height ? undefined : "h-full"}
     >
       <Spine copy={copy} dragging={isDragging} />
     </div>

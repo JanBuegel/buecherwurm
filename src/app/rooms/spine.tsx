@@ -20,17 +20,19 @@ export function Spine({
   dragging?: boolean;
 }) {
   const color = spineColorFor(copy.id, copy.spineColor);
-  const width = spineWidthPx(copy.pageCount);
+  // Natural width drives how many text lines we try to show (a heuristic; the
+  // actual rendered width is controlled by the flex parent and may be smaller).
+  const natural = spineWidthPx(copy.pageCount);
   const text = readableText(color);
 
-  // Show more text lines as the spine gets wider.
+  // Show more text lines for chunkier books.
   const lines: { text: string; cls: string }[] = [
     { text: copy.title, cls: "text-[10px] font-semibold" },
   ];
-  if (copy.subtitle && width >= 34) {
+  if (copy.subtitle && natural >= 34) {
     lines.push({ text: copy.subtitle, cls: "text-[8px] italic opacity-75" });
   }
-  if (copy.author && width >= 22) {
+  if (copy.author && natural >= 22) {
     lines.push({ text: copy.author, cls: "text-[8px] opacity-80" });
   }
 
@@ -40,13 +42,12 @@ export function Spine({
         .filter(Boolean)
         .join(" — ")}
       style={{
-        width,
         backgroundColor: color,
         color: text,
         backgroundImage:
           "linear-gradient(90deg, rgba(255,255,255,.30) 0%, rgba(255,255,255,.06) 12%, rgba(0,0,0,.10) 80%, rgba(0,0,0,.38) 100%)",
       }}
-      className={`relative flex h-full shrink-0 cursor-grab items-center justify-center gap-px overflow-hidden rounded-t-[3px] border-b-2 border-black/30 shadow-[0_1px_2px_rgba(0,0,0,.4)] ${
+      className={`relative flex h-full w-full cursor-grab items-center justify-center gap-px overflow-hidden rounded-t-[3px] border-b-2 border-black/30 shadow-[0_1px_2px_rgba(0,0,0,.4)] ${
         dragging ? "opacity-60" : ""
       }`}
     >

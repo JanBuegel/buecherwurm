@@ -135,7 +135,7 @@ export default async function BooksPage({
               <li key={copy.id}>
                 <Link
                   href={`/books/${copy.id}`}
-                  className="flex gap-4 rounded-lg border bg-card p-3 transition-colors hover:bg-muted/40"
+                  className="flex gap-4 rounded-xl border bg-card p-3 shadow-sm ring-1 ring-foreground/5 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md hover:ring-foreground/15"
                 >
                   {copy.book.coverUrl ? (
                     // eslint-disable-next-line @next/next/no-img-element
