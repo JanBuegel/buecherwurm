@@ -34,7 +34,7 @@ export default async function CopyDetailPage({
     with: {
       book: true,
       owner: { columns: { name: true } },
-      shelf: { columns: { name: true, room: true } },
+      room: { columns: { name: true } },
       copyTags: { with: { tag: { columns: { id: true, name: true } } } },
     },
   });
@@ -115,13 +115,7 @@ export default async function CopyDetailPage({
           <Detail label="Inhaber" value={copy.owner.name} />
           <Detail
             label="Standort"
-            value={
-              copy.shelf
-                ? copy.shelf.room
-                  ? `${copy.shelf.room} · ${copy.shelf.name}`
-                  : copy.shelf.name
-                : "—"
-            }
+            value={copy.room ? copy.room.name : "📚 Stapel (nicht eingeräumt)"}
           />
           <Detail label="Status" value={statusLabel(copy.status)} />
           <Detail label="Zustand" value={conditionLabel(copy.condition) ?? "—"} />

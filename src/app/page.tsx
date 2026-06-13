@@ -55,6 +55,13 @@ export default async function Home() {
                 + Buch erfassen
               </Button>
             ) : null}
+            <Button
+              variant="outline"
+              nativeButton={false}
+              render={<Link href="/settings" />}
+            >
+              ⚙️ Einstellungen
+            </Button>
           </div>
         </CardContent>
       </Card>

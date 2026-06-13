@@ -6,8 +6,19 @@ import { redirect } from "next/navigation";
 import { db } from "@/db";
 import { books, copies, copyTags, tags } from "@/db/schema";
 import { requireOwner } from "@/lib/auth-helpers";
+import { saveCoverFile } from "@/lib/covers";
 import { normalizeIsbn } from "@/lib/isbn";
 import { type BookMetadata, lookupByEan } from "@/lib/metadata";
+
+/** Resolves the cover URL: an uploaded file wins over the text URL field. */
+async function resolveCoverUrl(formData: FormData): Promise<string | null> {
+  const file = formData.get("coverFile");
+  if (file instanceof File && file.size > 0) {
+    const saved = await saveCoverFile(file);
+    if (saved) return saved;
+  }
+  return String(formData.get("coverUrl") ?? "").trim() || null;
+}
 
 /* --------------------------------------------------------------- lookup --- */
 
@@ -51,11 +62,11 @@ function parsePriceCents(raw: FormDataEntryValue | null): number | null {
   return Number.isFinite(euros) ? Math.round(euros * 100) : null;
 }
 
-async function nextPosition(shelfId: string | null): Promise<number> {
+async function nextPosition(roomId: string | null): Promise<number> {
   const [row] = await db
     .select({ value: max(copies.position) })
     .from(copies)
-    .where(shelfId ? eq(copies.shelfId, shelfId) : undefined);
+    .where(roomId ? eq(copies.roomId, roomId) : undefined);
   return (row?.value ?? 0) + 1;
 }
 
@@ -87,8 +98,8 @@ export async function createCopyAction(
   const rawEan = String(formData.get("ean") ?? "").trim();
   const ean = rawEan ? normalizeIsbn(rawEan) : null;
 
-  const shelfIdRaw = String(formData.get("shelfId") ?? "").trim();
-  const shelfId = shelfIdRaw && shelfIdRaw !== "none" ? shelfIdRaw : null;
+  const roomIdRaw = String(formData.get("roomId") ?? "").trim();
+  const roomId = roomIdRaw && roomIdRaw !== "none" ? roomIdRaw : null;
 
   const statusRaw = String(formData.get("status") ?? "available").trim();
   const status = (
@@ -107,6 +118,7 @@ export async function createCopyAction(
     bookId = existingBook.id;
   } else {
     const authors = parseList(formData.get("authors"));
+    const coverUrl = await resolveCoverUrl(formData);
     const [book] = await db
       .insert(books)
       .values({
@@ -120,7 +132,7 @@ export async function createCopyAction(
         pageCount: parseIntOrNull(formData.get("pageCount")),
         language: String(formData.get("language") ?? "").trim() || null,
         description: String(formData.get("description") ?? "").trim() || null,
-        coverUrl: String(formData.get("coverUrl") ?? "").trim() || null,
+        coverUrl,
         metadataSource:
           String(formData.get("metadataSource") ?? "").trim() || "manual",
       })
@@ -134,8 +146,8 @@ export async function createCopyAction(
     .values({
       bookId,
       ownerId,
-      shelfId,
-      position: await nextPosition(shelfId),
+      roomId,
+      position: await nextPosition(roomId),
       condition: String(formData.get("condition") ?? "").trim() || null,
       status,
       purchasePriceCents: parsePriceCents(formData.get("purchasePrice")),
@@ -194,8 +206,8 @@ export async function updateCopyAction(
   const rawEan = String(formData.get("ean") ?? "").trim();
   const ean = rawEan ? normalizeIsbn(rawEan) : null;
 
-  const shelfIdRaw = String(formData.get("shelfId") ?? "").trim();
-  const shelfId = shelfIdRaw && shelfIdRaw !== "none" ? shelfIdRaw : null;
+  const roomIdRaw = String(formData.get("roomId") ?? "").trim();
+  const roomId = roomIdRaw && roomIdRaw !== "none" ? roomIdRaw : null;
 
   const statusRaw = String(formData.get("status") ?? "available").trim();
   const status = (
@@ -205,6 +217,7 @@ export async function updateCopyAction(
   ) as "available" | "reading" | "read" | "lent";
 
   const authors = parseList(formData.get("authors"));
+  const coverUrl = await resolveCoverUrl(formData);
 
   // The bibliographic record is shared across copies — updating it here updates
   // it for every copy of the title.
@@ -222,7 +235,7 @@ export async function updateCopyAction(
         pageCount: parseIntOrNull(formData.get("pageCount")),
         language: String(formData.get("language") ?? "").trim() || null,
         description: String(formData.get("description") ?? "").trim() || null,
-        coverUrl: String(formData.get("coverUrl") ?? "").trim() || null,
+        coverUrl,
       })
       .where(eq(books.id, copy.bookId));
   } catch {
@@ -233,7 +246,7 @@ export async function updateCopyAction(
     .update(copies)
     .set({
       ownerId,
-      shelfId,
+      roomId,
       condition: String(formData.get("condition") ?? "").trim() || null,
       status,
       purchasePriceCents: parsePriceCents(formData.get("purchasePrice")),

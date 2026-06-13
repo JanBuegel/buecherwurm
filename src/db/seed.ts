@@ -1,42 +1,53 @@
 import { eq } from "drizzle-orm";
 import { hashPassword } from "../lib/password";
 import { db } from "./index";
-import { shelves, users } from "./schema";
+import { persons, rooms, users } from "./schema";
 
 const OWNER_EMAIL = "jab@tickettoaster.de";
 const OWNER_NAME = "Jan";
 const OWNER_PASSWORD = "buecherwurm"; // change after first login
 
 async function main() {
-  const existing = await db.query.users.findFirst({
+  let owner = await db.query.users.findFirst({
     where: eq(users.email, OWNER_EMAIL),
   });
 
-  if (existing) {
+  if (owner) {
     console.log(`Seed: owner ${OWNER_EMAIL} already exists — skipping.`);
   } else {
     const passwordHash = await hashPassword(OWNER_PASSWORD);
-    await db.insert(users).values({
-      name: OWNER_NAME,
-      email: OWNER_EMAIL,
-      passwordHash,
-      role: "owner",
-    });
+    const [created] = await db
+      .insert(users)
+      .values({
+        name: OWNER_NAME,
+        email: OWNER_EMAIL,
+        passwordHash,
+        role: "owner",
+      })
+      .returning();
+    owner = created;
     console.log(
       `Seed: created owner ${OWNER_EMAIL} (password: ${OWNER_PASSWORD})`,
     );
   }
 
-  const shelfCount = (await db.select().from(shelves)).length;
-  if (shelfCount === 0) {
-    await db.insert(shelves).values({
-      name: "Wohnzimmerregal",
-      room: "Wohnzimmer",
-      sortIndex: 0,
-    });
-    console.log("Seed: created shelf 'Wohnzimmerregal'.");
+  // A person linked to the owner account, so captured books have a default owner.
+  const existingPerson = await db.query.persons.findFirst({
+    where: eq(persons.userId, owner.id),
+  });
+  if (!existingPerson) {
+    await db.insert(persons).values({ name: OWNER_NAME, userId: owner.id });
+    console.log(`Seed: created person '${OWNER_NAME}' linked to owner.`);
   } else {
-    console.log("Seed: shelves already present — skipping.");
+    console.log("Seed: linked person already present — skipping.");
+  }
+
+  const roomCount = (await db.select().from(rooms)).length;
+  if (roomCount === 0) {
+    await db.insert(rooms).values({ name: "Wohnzimmer", sortIndex: 0 });
+    console.log("Seed: created room 'Wohnzimmer'.");
+  } else {
+    console.log("Seed: rooms already present — skipping.");
   }
 
   console.log("Seed done.");

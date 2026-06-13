@@ -20,18 +20,87 @@ const createdAt = () =>
     .default(sql`(unixepoch())`);
 
 /* ---------------------------------------------------------------- users --- */
+/* Login accounts. role controls app access; ownership lives on `persons`.    */
 
 export const users = sqliteTable("users", {
   id: id(),
   name: text("name").notNull(),
   email: text("email").notNull().unique(),
   passwordHash: text("password_hash").notNull(),
-  // "owner" can manage their books; "viewer" has read-only access.
+  // "owner" can manage; "viewer" has read-only access.
   role: text("role", { enum: ["owner", "viewer"] })
     .notNull()
     .default("viewer"),
   createdAt: createdAt(),
 });
+
+/* -------------------------------------------------------------- persons --- */
+/* A person who can own books. Decoupled from login accounts: a person may    */
+/* optionally be linked to a user, but owners need not have an account.       */
+
+export const persons = sqliteTable("persons", {
+  id: id(),
+  name: text("name").notNull(),
+  userId: text("user_id")
+    .references(() => users.id, { onDelete: "set null" })
+    .unique(),
+  createdAt: createdAt(),
+});
+
+/* ----------------------------------------------------------------- rooms --- */
+
+export const rooms = sqliteTable("rooms", {
+  id: id(),
+  name: text("name").notNull(),
+  sortIndex: real("sort_index").notNull().default(0),
+  createdAt: createdAt(),
+});
+
+/* --------------------------------------------------------------- shelves --- */
+/* A piece of furniture in a room (KALLAX, IVAR, …). Its grid of compartments  */
+/* holds the books. The fancy editor/renderer arrives in a later phase.        */
+
+export const shelves = sqliteTable(
+  "shelves",
+  {
+    id: id(),
+    roomId: text("room_id")
+      .notNull()
+      .references(() => rooms.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    // "kallax" | "ivar" | "billy" | "custom"
+    kind: text("kind"),
+    color: text("color"),
+    // Overall grid hint; `compartments` hold the authoritative structure.
+    columns: integer("columns"),
+    rows: integer("rows"),
+    sortIndex: real("sort_index").notNull().default(0),
+    createdAt: createdAt(),
+  },
+  (t) => [index("shelves_room_idx").on(t.roomId)],
+);
+
+/* ---------------------------------------------------------- compartments --- */
+/* A single slot (Fach) within a piece of furniture. Books live here.         */
+
+export const compartments = sqliteTable(
+  "compartments",
+  {
+    id: id(),
+    shelfId: text("shelf_id")
+      .notNull()
+      .references(() => shelves.id, { onDelete: "cascade" }),
+    row: integer("row").notNull().default(0),
+    col: integer("col").notNull().default(0),
+    // Optional per-compartment sizing for non-uniform furniture (e.g. IVAR).
+    widthUnits: real("width_units"),
+    heightUnits: real("height_units"),
+    label: text("label"),
+    sortIndex: real("sort_index").notNull().default(0),
+    createdAt: createdAt(),
+  },
+  (t) => [index("compartments_shelf_idx").on(t.shelfId)],
+);
 
 /* ---------------------------------------------------------------- books --- */
 /* Bibliographic record — one per title/edition, deduplicated by EAN.        */
@@ -58,19 +127,9 @@ export const books = sqliteTable(
   (t) => [uniqueIndex("books_ean_unq").on(t.ean)],
 );
 
-/* --------------------------------------------------------------- shelves --- */
-/* A physical shelf — the unit rendered in the bookshelf view.               */
-
-export const shelves = sqliteTable("shelves", {
-  id: id(),
-  name: text("name").notNull(),
-  room: text("room"),
-  sortIndex: real("sort_index").notNull().default(0),
-  createdAt: createdAt(),
-});
-
 /* -------------------------------------------------------------- copies --- */
-/* A physical copy that someone owns and shelves somewhere.                  */
+/* A physical copy owned by a person, located in a room and optionally        */
+/* placed in a specific compartment. No compartment = sits in the room stack. */
 
 export const copies = sqliteTable(
   "copies",
@@ -81,11 +140,14 @@ export const copies = sqliteTable(
       .references(() => books.id, { onDelete: "cascade" }),
     ownerId: text("owner_id")
       .notNull()
-      .references(() => users.id, { onDelete: "restrict" }),
-    shelfId: text("shelf_id").references(() => shelves.id, {
+      .references(() => persons.id, { onDelete: "restrict" }),
+    roomId: text("room_id").references(() => rooms.id, {
       onDelete: "set null",
     }),
-    // Fractional position to allow drag & drop reordering within a shelf.
+    compartmentId: text("compartment_id").references(() => compartments.id, {
+      onDelete: "set null",
+    }),
+    // Fractional position for drag & drop ordering within a compartment/stack.
     position: real("position").notNull().default(0),
     // "new" | "good" | "worn"
     condition: text("condition"),
@@ -98,15 +160,15 @@ export const copies = sqliteTable(
     purchasePriceCents: integer("purchase_price_cents"),
     purchaseDate: integer("purchase_date", { mode: "timestamp" }),
     notes: text("notes"),
-    // Colour of the spine in the bookshelf render (hex). Derived from cover
-    // or chosen manually.
+    // Spine colour in the bookshelf render (hex). Derived from cover or chosen.
     spineColor: text("spine_color"),
     createdAt: createdAt(),
   },
   (t) => [
     index("copies_book_idx").on(t.bookId),
     index("copies_owner_idx").on(t.ownerId),
-    index("copies_shelf_idx").on(t.shelfId),
+    index("copies_room_idx").on(t.roomId),
+    index("copies_compartment_idx").on(t.compartmentId),
   ],
 );
 
@@ -133,7 +195,6 @@ export const copyTags = sqliteTable(
 );
 
 /* ---------------------------------------------------------------- loans --- */
-/* Lending history for a copy (Phase 5 feature, modelled up front).          */
 
 export const loans = sqliteTable(
   "loans",
@@ -155,22 +216,48 @@ export const loans = sqliteTable(
 
 /* ------------------------------------------------------------ relations --- */
 
-export const usersRelations = relations(users, ({ many }) => ({
+export const usersRelations = relations(users, ({ one }) => ({
+  person: one(persons),
+}));
+
+export const personsRelations = relations(persons, ({ one, many }) => ({
+  user: one(users, { fields: [persons.userId], references: [users.id] }),
   copies: many(copies),
 }));
+
+export const roomsRelations = relations(rooms, ({ many }) => ({
+  shelves: many(shelves),
+  copies: many(copies),
+}));
+
+export const shelvesRelations = relations(shelves, ({ one, many }) => ({
+  room: one(rooms, { fields: [shelves.roomId], references: [rooms.id] }),
+  compartments: many(compartments),
+}));
+
+export const compartmentsRelations = relations(
+  compartments,
+  ({ one, many }) => ({
+    shelf: one(shelves, {
+      fields: [compartments.shelfId],
+      references: [shelves.id],
+    }),
+    copies: many(copies),
+  }),
+);
 
 export const booksRelations = relations(books, ({ many }) => ({
   copies: many(copies),
 }));
 
-export const shelvesRelations = relations(shelves, ({ many }) => ({
-  copies: many(copies),
-}));
-
 export const copiesRelations = relations(copies, ({ one, many }) => ({
   book: one(books, { fields: [copies.bookId], references: [books.id] }),
-  owner: one(users, { fields: [copies.ownerId], references: [users.id] }),
-  shelf: one(shelves, { fields: [copies.shelfId], references: [shelves.id] }),
+  owner: one(persons, { fields: [copies.ownerId], references: [persons.id] }),
+  room: one(rooms, { fields: [copies.roomId], references: [rooms.id] }),
+  compartment: one(compartments, {
+    fields: [copies.compartmentId],
+    references: [compartments.id],
+  }),
   copyTags: many(copyTags),
   loans: many(loans),
 }));
@@ -192,10 +279,16 @@ export const loansRelations = relations(loans, ({ one }) => ({
 
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
-export type Book = typeof books.$inferSelect;
-export type NewBook = typeof books.$inferInsert;
+export type Person = typeof persons.$inferSelect;
+export type NewPerson = typeof persons.$inferInsert;
+export type Room = typeof rooms.$inferSelect;
+export type NewRoom = typeof rooms.$inferInsert;
 export type Shelf = typeof shelves.$inferSelect;
 export type NewShelf = typeof shelves.$inferInsert;
+export type Compartment = typeof compartments.$inferSelect;
+export type NewCompartment = typeof compartments.$inferInsert;
+export type Book = typeof books.$inferSelect;
+export type NewBook = typeof books.$inferInsert;
 export type Copy = typeof copies.$inferSelect;
 export type NewCopy = typeof copies.$inferInsert;
 export type Tag = typeof tags.$inferSelect;

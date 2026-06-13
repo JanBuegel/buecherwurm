@@ -9,18 +9,18 @@ import { selectClass } from "./form-ui";
 type Option = { id: string; name: string; room?: string | null };
 
 export function FilterBar({
-  owners,
-  shelves,
+  persons,
+  rooms,
   tags,
   values,
 }: {
-  owners: Option[];
-  shelves: Option[];
+  persons: Option[];
+  rooms: Option[];
   tags: Option[];
   values: {
     q?: string;
     owner?: string;
-    shelf?: string;
+    room?: string;
     tag?: string;
     status?: string;
   };
@@ -53,7 +53,7 @@ export function FilterBar({
   }, [q]);
 
   const hasFilters = Boolean(
-    values.q || values.owner || values.shelf || values.tag || values.status,
+    values.q || values.owner || values.room || values.tag || values.status,
   );
 
   return (
@@ -72,24 +72,24 @@ export function FilterBar({
         aria-label="Inhaber"
       >
         <option value="">Alle Inhaber</option>
-        {owners.map((o) => (
-          <option key={o.id} value={o.id}>
-            {o.name}
+        {persons.map((p) => (
+          <option key={p.id} value={p.id}>
+            {p.name}
           </option>
         ))}
       </select>
 
       <select
-        value={values.shelf ?? ""}
-        onChange={(e) => apply("shelf", e.target.value)}
+        value={values.room ?? ""}
+        onChange={(e) => apply("room", e.target.value)}
         className={`${selectClass} w-auto`}
-        aria-label="Standort"
+        aria-label="Raum"
       >
-        <option value="">Alle Standorte</option>
-        <option value="none">Ohne Regal</option>
-        {shelves.map((s) => (
-          <option key={s.id} value={s.id}>
-            {s.room ? `${s.room} · ${s.name}` : s.name}
+        <option value="">Alle Räume</option>
+        <option value="none">Im Stapel</option>
+        {rooms.map((r) => (
+          <option key={r.id} value={r.id}>
+            {r.name}
           </option>
         ))}
       </select>

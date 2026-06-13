@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "ca75fec7-b5f4-4f5a-9dbd-f06a91be6407",
+  "id": "90032437-ea48-42b0-bfe4-736cacacd859",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "tables": {
     "books": {
@@ -121,6 +121,105 @@
       "uniqueConstraints": {},
       "checkConstraints": {}
     },
+    "compartments": {
+      "name": "compartments",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "shelf_id": {
+          "name": "shelf_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "row": {
+          "name": "row",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0
+        },
+        "col": {
+          "name": "col",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0
+        },
+        "width_units": {
+          "name": "width_units",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "height_units": {
+          "name": "height_units",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "label": {
+          "name": "label",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "sort_index": {
+          "name": "sort_index",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "(unixepoch())"
+        }
+      },
+      "indexes": {
+        "compartments_shelf_idx": {
+          "name": "compartments_shelf_idx",
+          "columns": [
+            "shelf_id"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "compartments_shelf_id_shelves_id_fk": {
+          "name": "compartments_shelf_id_shelves_id_fk",
+          "tableFrom": "compartments",
+          "tableTo": "shelves",
+          "columnsFrom": [
+            "shelf_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
     "copies": {
       "name": "copies",
       "columns": {
@@ -145,8 +244,15 @@
           "notNull": true,
           "autoincrement": false
         },
-        "shelf_id": {
-          "name": "shelf_id",
+        "room_id": {
+          "name": "room_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "compartment_id": {
+          "name": "compartment_id",
           "type": "text",
           "primaryKey": false,
           "notNull": false,
@@ -227,10 +333,17 @@
           ],
           "isUnique": false
         },
-        "copies_shelf_idx": {
-          "name": "copies_shelf_idx",
+        "copies_room_idx": {
+          "name": "copies_room_idx",
           "columns": [
-            "shelf_id"
+            "room_id"
+          ],
+          "isUnique": false
+        },
+        "copies_compartment_idx": {
+          "name": "copies_compartment_idx",
+          "columns": [
+            "compartment_id"
           ],
           "isUnique": false
         }
@@ -249,10 +362,10 @@
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
-        "copies_owner_id_users_id_fk": {
-          "name": "copies_owner_id_users_id_fk",
+        "copies_owner_id_persons_id_fk": {
+          "name": "copies_owner_id_persons_id_fk",
           "tableFrom": "copies",
-          "tableTo": "users",
+          "tableTo": "persons",
           "columnsFrom": [
             "owner_id"
           ],
@@ -262,12 +375,25 @@
           "onDelete": "restrict",
           "onUpdate": "no action"
         },
-        "copies_shelf_id_shelves_id_fk": {
-          "name": "copies_shelf_id_shelves_id_fk",
+        "copies_room_id_rooms_id_fk": {
+          "name": "copies_room_id_rooms_id_fk",
           "tableFrom": "copies",
-          "tableTo": "shelves",
+          "tableTo": "rooms",
           "columnsFrom": [
-            "shelf_id"
+            "room_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        },
+        "copies_compartment_id_compartments_id_fk": {
+          "name": "copies_compartment_id_compartments_id_fk",
+          "tableFrom": "copies",
+          "tableTo": "compartments",
+          "columnsFrom": [
+            "compartment_id"
           ],
           "columnsTo": [
             "id"
@@ -422,8 +548,8 @@
       "uniqueConstraints": {},
       "checkConstraints": {}
     },
-    "shelves": {
-      "name": "shelves",
+    "persons": {
+      "name": "persons",
       "columns": {
         "id": {
           "name": "id",
@@ -439,11 +565,65 @@
           "notNull": true,
           "autoincrement": false
         },
-        "room": {
-          "name": "room",
+        "user_id": {
+          "name": "user_id",
           "type": "text",
           "primaryKey": false,
           "notNull": false,
+          "autoincrement": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "(unixepoch())"
+        }
+      },
+      "indexes": {
+        "persons_user_id_unique": {
+          "name": "persons_user_id_unique",
+          "columns": [
+            "user_id"
+          ],
+          "isUnique": true
+        }
+      },
+      "foreignKeys": {
+        "persons_user_id_users_id_fk": {
+          "name": "persons_user_id_users_id_fk",
+          "tableFrom": "persons",
+          "tableTo": "users",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "rooms": {
+      "name": "rooms",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
           "autoincrement": false
         },
         "sort_index": {
@@ -465,6 +645,103 @@
       },
       "indexes": {},
       "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "shelves": {
+      "name": "shelves",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "room_id": {
+          "name": "room_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "kind": {
+          "name": "kind",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "color": {
+          "name": "color",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "columns": {
+          "name": "columns",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "rows": {
+          "name": "rows",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "sort_index": {
+          "name": "sort_index",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "(unixepoch())"
+        }
+      },
+      "indexes": {
+        "shelves_room_idx": {
+          "name": "shelves_room_idx",
+          "columns": [
+            "room_id"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "shelves_room_id_rooms_id_fk": {
+          "name": "shelves_room_id_rooms_id_fk",
+          "tableFrom": "shelves",
+          "tableTo": "rooms",
+          "columnsFrom": [
+            "room_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "checkConstraints": {}

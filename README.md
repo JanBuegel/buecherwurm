@@ -50,10 +50,13 @@ Standard-Owner aus dem Seed: **jab@tickettoaster.de** / Passwort **buecherwurm**
 ## Datenmodell (Kurzform)
 
 - **books** — bibliografischer Datensatz (per EAN dedupliziert)
-- **copies** — physisches Exemplar (→ book, owner, shelf, Status, Zustand, Position fürs Regal)
-- **shelves** — Regal (Einheit fürs Bücherregal-Rendering)
+- **copies** — physisches Exemplar (→ book, owner=person, room, compartment, Status, Zustand, Position)
+- **persons** — Inhaber (entkoppelt von Konten; optional mit user verknüpft)
+- **rooms** — Räume
+- **shelves** — Möbel (KALLAX/IVAR/…: roomId, kind, color, columns/rows) — Editor folgt in Phase 5
+- **compartments** — Fächer eines Möbels (Raster) — UI folgt in Phase 5
 - **tags** / **copy_tags** — frei vergebbare Tags (n:m an copies)
-- **users** — Owner / Viewer
+- **users** — Login-Konten (Owner / Viewer)
 - **loans** — Verleih-Historie
 
 ## Roadmap
@@ -61,5 +64,6 @@ Standard-Owner aus dem Seed: **jab@tickettoaster.de** / Passwort **buecherwurm**
 1. ✅ Fundament (Scaffold, Datenmodell, Auth, Migrationen)
 2. ✅ Erfassen (EAN → Metadaten via DNB → Open Library → Google Books optional)
 3. ✅ Verwalten (Liste, Suche, Filter, Detail, Bearbeiten, Löschen)
-4. 🍒 Bücherregal (gerenderte Buchrücken + Drag & Drop)
-5. Rollen-Feinschliff, mobile Scan-PWA, Verleih, Statistiken
+4. ✅ Verwaltung & Backup (Personen, Benutzer, Räume, Tags, Profil, Cover-Upload, CSV Export/Import)
+5. 🍒 Fancy Bücherregal (Möbel-Editor mit Presets KALLAX/IVAR, gerenderte Buchrücken, Drag & Drop vom Raum-Stapel ins Fach)
+6. Mobile Scan-PWA, Verleih, Statistiken

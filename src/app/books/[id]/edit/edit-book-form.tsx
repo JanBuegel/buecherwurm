@@ -28,7 +28,7 @@ type Initial = {
   description: string;
   coverUrl: string;
   ownerId: string;
-  shelfId: string;
+  roomId: string;
   status: string;
   condition: string;
   tags: string;
@@ -37,16 +37,16 @@ type Initial = {
   notes: string;
 };
 
-type Option = { id: string; name: string; room?: string | null };
+type Option = { id: string; name: string };
 
 export function EditBookForm({
   initial,
-  owners,
-  shelves,
+  persons,
+  rooms,
 }: {
   initial: Initial;
-  owners: Option[];
-  shelves: Option[];
+  persons: Option[];
+  rooms: Option[];
 }) {
   const [coverUrl, setCoverUrl] = useState(initial.coverUrl);
   const [state, formAction, submitting] = useActionState<
@@ -64,18 +64,26 @@ export function EditBookForm({
           <CardTitle className="text-base">Buchdaten</CardTitle>
         </CardHeader>
         <CardContent className="flex gap-4">
-          {coverUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={coverUrl}
-              alt="Cover"
-              className="h-36 w-24 shrink-0 rounded border object-cover"
+          <div className="flex shrink-0 flex-col items-center gap-2">
+            {coverUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={coverUrl}
+                alt="Cover"
+                className="h-36 w-24 rounded border object-cover"
+              />
+            ) : (
+              <div className="flex h-36 w-24 items-center justify-center rounded border border-dashed text-center text-xs text-muted-foreground">
+                kein Cover
+              </div>
+            )}
+            <Input
+              type="file"
+              name="coverFile"
+              accept="image/*"
+              className="w-24 text-xs"
             />
-          ) : (
-            <div className="flex h-36 w-24 shrink-0 items-center justify-center rounded border border-dashed text-center text-xs text-muted-foreground">
-              kein Cover
-            </div>
-          )}
+          </div>
 
           <div className="grid flex-1 grid-cols-1 gap-3 sm:grid-cols-2">
             <Field label="Titel *" className="sm:col-span-2">
@@ -140,23 +148,23 @@ export function EditBookForm({
               className={selectClass}
               required
             >
-              {owners.map((o) => (
-                <option key={o.id} value={o.id}>
-                  {o.name}
+              {persons.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name}
                 </option>
               ))}
             </select>
           </Field>
-          <Field label="Standort / Regal">
+          <Field label="Raum">
             <select
-              name="shelfId"
-              defaultValue={initial.shelfId}
+              name="roomId"
+              defaultValue={initial.roomId}
               className={selectClass}
             >
-              <option value="none">— kein Regal —</option>
-              {shelves.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.room ? `${s.room} · ${s.name}` : s.name}
+              <option value="none">— kein Raum —</option>
+              {rooms.map((r) => (
+                <option key={r.id} value={r.id}>
+                  {r.name}
                 </option>
               ))}
             </select>

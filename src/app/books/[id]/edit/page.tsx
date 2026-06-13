@@ -2,7 +2,7 @@ import { asc, eq } from "drizzle-orm";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { db } from "@/db";
-import { copies, shelves, users } from "@/db/schema";
+import { copies, persons, rooms } from "@/db/schema";
 import { requireOwner } from "@/lib/auth-helpers";
 import { EditBookForm } from "./edit-book-form";
 
@@ -23,14 +23,14 @@ export default async function EditCopyPage({
   });
   if (!copy) notFound();
 
-  const [owners, shelfList] = await Promise.all([
-    db.query.users.findMany({
-      columns: { id: true, name: true, role: true },
-      orderBy: asc(users.name),
+  const [personList, roomList] = await Promise.all([
+    db.query.persons.findMany({
+      columns: { id: true, name: true },
+      orderBy: asc(persons.name),
     }),
-    db.query.shelves.findMany({
-      columns: { id: true, name: true, room: true },
-      orderBy: asc(shelves.name),
+    db.query.rooms.findMany({
+      columns: { id: true, name: true },
+      orderBy: asc(rooms.sortIndex),
     }),
   ]);
 
@@ -48,7 +48,7 @@ export default async function EditCopyPage({
     description: copy.book.description ?? "",
     coverUrl: copy.book.coverUrl ?? "",
     ownerId: copy.ownerId,
-    shelfId: copy.shelfId ?? "none",
+    roomId: copy.roomId ?? "none",
     status: copy.status,
     condition: copy.condition ?? "",
     tags: copy.copyTags.map((ct) => ct.tag.name).join(", "),
@@ -73,8 +73,8 @@ export default async function EditCopyPage({
       </div>
       <EditBookForm
         initial={initial}
-        owners={owners.filter((o) => o.role === "owner")}
-        shelves={shelfList}
+        persons={personList}
+        rooms={roomList}
       />
     </main>
   );

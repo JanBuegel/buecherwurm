@@ -1,26 +1,27 @@
-import { asc } from "drizzle-orm";
+import { asc, eq } from "drizzle-orm";
 import Link from "next/link";
 import { db } from "@/db";
-import { shelves, users } from "@/db/schema";
+import { persons, rooms } from "@/db/schema";
 import { requireOwner } from "@/lib/auth-helpers";
 import { NewBookForm } from "./new-book-form";
 
 export default async function NewBookPage() {
   const me = await requireOwner();
 
-  const [owners, shelfList] = await Promise.all([
-    db.query.users.findMany({
-      columns: { id: true, name: true, role: true },
-      orderBy: asc(users.name),
+  const [personList, roomList] = await Promise.all([
+    db.query.persons.findMany({
+      columns: { id: true, name: true, userId: true },
+      orderBy: asc(persons.name),
     }),
-    db.query.shelves.findMany({
-      columns: { id: true, name: true, room: true },
-      orderBy: asc(shelves.name),
+    db.query.rooms.findMany({
+      columns: { id: true, name: true },
+      orderBy: asc(rooms.sortIndex),
     }),
   ]);
 
-  // Only owners can hold copies.
-  const ownerOptions = owners.filter((u) => u.role === "owner");
+  // Default owner = the person linked to the current account, if any.
+  const myPerson = personList.find((p) => p.userId === me.id);
+  const defaultOwnerId = myPerson?.id ?? personList[0]?.id ?? "";
 
   return (
     <main className="mx-auto flex max-w-3xl flex-col gap-6 p-6 sm:p-8">
@@ -34,9 +35,9 @@ export default async function NewBookPage() {
         </Link>
       </div>
       <NewBookForm
-        owners={ownerOptions}
-        shelves={shelfList}
-        currentUserId={me.id}
+        persons={personList}
+        rooms={roomList}
+        defaultOwnerId={defaultOwnerId}
       />
     </main>
   );

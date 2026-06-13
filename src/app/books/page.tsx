@@ -3,7 +3,7 @@ import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { db } from "@/db";
-import { copies, shelves as shelvesTable, tags as tagsTable, users } from "@/db/schema";
+import { copies, persons as personsTable, rooms as roomsTable, tags as tagsTable } from "@/db/schema";
 import { statusLabel } from "@/lib/book-display";
 import { getCurrentUser, requireUser } from "@/lib/auth-helpers";
 import { FilterBar } from "./filter-bar";
@@ -11,7 +11,7 @@ import { FilterBar } from "./filter-bar";
 type SearchParams = {
   q?: string;
   owner?: string;
-  shelf?: string;
+  room?: string;
   tag?: string;
   status?: string;
 };
@@ -26,23 +26,23 @@ export default async function BooksPage({
   const isOwner = user?.role === "owner";
   const sp = await searchParams;
 
-  const [list, owners, shelfList, tagList] = await Promise.all([
+  const [list, personList, roomList, tagList] = await Promise.all([
     db.query.copies.findMany({
       orderBy: desc(copies.createdAt),
       with: {
         book: true,
         owner: { columns: { id: true, name: true } },
-        shelf: { columns: { id: true, name: true, room: true } },
+        room: { columns: { id: true, name: true } },
         copyTags: { with: { tag: { columns: { id: true, name: true } } } },
       },
     }),
-    db.query.users.findMany({
-      columns: { id: true, name: true, role: true },
-      orderBy: asc(users.name),
+    db.query.persons.findMany({
+      columns: { id: true, name: true },
+      orderBy: asc(personsTable.name),
     }),
-    db.query.shelves.findMany({
-      columns: { id: true, name: true, room: true },
-      orderBy: asc(shelvesTable.name),
+    db.query.rooms.findMany({
+      columns: { id: true, name: true },
+      orderBy: asc(roomsTable.sortIndex),
     }),
     db.query.tags.findMany({
       columns: { id: true, name: true },
@@ -54,8 +54,8 @@ export default async function BooksPage({
   const q = sp.q?.trim().toLowerCase() ?? "";
   const filtered = list.filter((copy) => {
     if (sp.owner && copy.ownerId !== sp.owner) return false;
-    if (sp.shelf) {
-      if (sp.shelf === "none" ? copy.shelfId !== null : copy.shelfId !== sp.shelf)
+    if (sp.room) {
+      if (sp.room === "none" ? copy.roomId !== null : copy.roomId !== sp.room)
         return false;
     }
     if (sp.status && copy.status !== sp.status) return false;
@@ -75,7 +75,7 @@ export default async function BooksPage({
   });
 
   const hasFilters = Boolean(
-    sp.q || sp.owner || sp.shelf || sp.status || sp.tag,
+    sp.q || sp.owner || sp.room || sp.status || sp.tag,
   );
 
   return (
@@ -106,8 +106,8 @@ export default async function BooksPage({
       </div>
 
       <FilterBar
-        owners={owners.filter((o) => o.role === "owner")}
-        shelves={shelfList}
+        persons={personList}
+        rooms={roomList}
         tags={tagList}
         values={sp}
       />
@@ -165,14 +165,11 @@ export default async function BooksPage({
                     </div>
                     <div className="mt-auto flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
                       <span>👤 {copy.owner.name}</span>
-                      {copy.shelf ? (
-                        <span>
-                          · 📍{" "}
-                          {copy.shelf.room
-                            ? `${copy.shelf.room} · ${copy.shelf.name}`
-                            : copy.shelf.name}
-                        </span>
-                      ) : null}
+                      {copy.room ? (
+                        <span>· 📍 {copy.room.name}</span>
+                      ) : (
+                        <span>· 📚 Stapel</span>
+                      )}
                       {tagNames.map((t) => (
                         <Badge
                           key={t}

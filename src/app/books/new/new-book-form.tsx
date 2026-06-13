@@ -17,7 +17,7 @@ import {
 } from "../actions";
 import { Field, selectClass } from "../form-ui";
 
-type Option = { id: string; name: string; room?: string | null };
+type Option = { id: string; name: string };
 
 type MetaForm = {
   ean: string;
@@ -50,13 +50,13 @@ const EMPTY: MetaForm = {
 };
 
 export function NewBookForm({
-  owners,
-  shelves,
-  currentUserId,
+  persons,
+  rooms,
+  defaultOwnerId,
 }: {
-  owners: Option[];
-  shelves: Option[];
-  currentUserId: string;
+  persons: Option[];
+  rooms: Option[];
+  defaultOwnerId: string;
 }) {
   const [form, setForm] = useState<MetaForm>(EMPTY);
   const [lookupMsg, setLookupMsg] = useState<string | null>(null);
@@ -152,18 +152,26 @@ export function NewBookForm({
           <CardTitle className="text-base">Buchdaten</CardTitle>
         </CardHeader>
         <CardContent className="flex gap-4">
-          {form.coverUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={form.coverUrl}
-              alt="Cover"
-              className="h-36 w-24 shrink-0 rounded border object-cover"
+          <div className="flex shrink-0 flex-col items-center gap-2">
+            {form.coverUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={form.coverUrl}
+                alt="Cover"
+                className="h-36 w-24 rounded border object-cover"
+              />
+            ) : (
+              <div className="flex h-36 w-24 items-center justify-center rounded border border-dashed text-center text-xs text-muted-foreground">
+                kein Cover
+              </div>
+            )}
+            <Input
+              type="file"
+              name="coverFile"
+              accept="image/*"
+              className="w-24 text-xs"
             />
-          ) : (
-            <div className="flex h-36 w-24 shrink-0 items-center justify-center rounded border border-dashed text-center text-xs text-muted-foreground">
-              kein Cover
-            </div>
-          )}
+          </div>
 
           <div className="grid flex-1 grid-cols-1 gap-3 sm:grid-cols-2">
             <Field label="Titel *" className="sm:col-span-2">
@@ -241,23 +249,23 @@ export function NewBookForm({
           <Field label="Inhaber *">
             <select
               name="ownerId"
-              defaultValue={currentUserId}
+              defaultValue={defaultOwnerId}
               className={selectClass}
               required
             >
-              {owners.map((o) => (
-                <option key={o.id} value={o.id}>
-                  {o.name}
+              {persons.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name}
                 </option>
               ))}
             </select>
           </Field>
-          <Field label="Standort / Regal">
-            <select name="shelfId" defaultValue="none" className={selectClass}>
-              <option value="none">— kein Regal —</option>
-              {shelves.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.room ? `${s.room} · ${s.name}` : s.name}
+          <Field label="Raum">
+            <select name="roomId" defaultValue="none" className={selectClass}>
+              <option value="none">— kein Raum —</option>
+              {rooms.map((r) => (
+                <option key={r.id} value={r.id}>
+                  {r.name}
                 </option>
               ))}
             </select>
