@@ -55,7 +55,7 @@ export default async function UsersSettingsPage() {
         <CardContent>
           <CreateForm action={createUserAction} submitLabel="Konto anlegen">
             <Field label="Name">
-              <Input name="name" placeholder="Name" required className="w-36" />
+              <Input name="name" placeholder="Name" required className="w-full sm:w-36" />
             </Field>
             <Field label="E-Mail">
               <Input
@@ -63,7 +63,7 @@ export default async function UsersSettingsPage() {
                 type="email"
                 placeholder="E-Mail"
                 required
-                className="w-52"
+                className="w-full sm:w-52"
               />
             </Field>
             <Field label="Passwort">
@@ -72,14 +72,14 @@ export default async function UsersSettingsPage() {
                 type="text"
                 placeholder="Passwort"
                 required
-                className="w-36"
+                className="w-full sm:w-36"
               />
             </Field>
             <Field label="Rolle">
               <select
                 name="role"
                 defaultValue="viewer"
-                className={`${selectClass} w-auto`}
+                className={`${selectClass} sm:w-auto`}
               >
                 <option value="viewer">Viewer</option>
                 <option value="owner">Owner</option>
@@ -89,7 +89,7 @@ export default async function UsersSettingsPage() {
               <select
                 name="linkPersonId"
                 defaultValue="none"
-                className={`${selectClass} w-auto`}
+                className={`${selectClass} sm:w-auto`}
               >
                 <option value="none">— keine —</option>
                 {unlinkedPersons.map((p) => (
@@ -150,21 +150,21 @@ export default async function UsersSettingsPage() {
                 >
                   <input type="hidden" name="id" value={user.id} />
                   <Field label="Name">
-                    <Input name="name" defaultValue={user.name} className="w-36" />
+                    <Input name="name" defaultValue={user.name} className="w-full sm:w-36" />
                   </Field>
                   <Field label="E-Mail">
                     <Input
                       name="email"
                       type="email"
                       defaultValue={user.email}
-                      className="w-52"
+                      className="w-full sm:w-52"
                     />
                   </Field>
                   <Field label="Rolle">
                     <select
                       name="role"
                       defaultValue={user.role}
-                      className={`${selectClass} w-auto`}
+                      className={`${selectClass} sm:w-auto`}
                       disabled={isLastOwner}
                     >
                       <option value="viewer">Viewer</option>
@@ -179,7 +179,7 @@ export default async function UsersSettingsPage() {
                 <div className="flex flex-wrap items-end justify-between gap-2">
                   <form
                     action={setUserPasswordAction}
-                    className="flex items-end gap-2"
+                    className="flex flex-wrap items-end gap-2"
                   >
                     <input type="hidden" name="id" value={user.id} />
                     <Field label="Neues Passwort">
@@ -187,7 +187,7 @@ export default async function UsersSettingsPage() {
                         name="password"
                         type="text"
                         placeholder="••••"
-                        className="w-44"
+                        className="w-full sm:w-44"
                       />
                     </Field>
                     <Button type="submit" size="sm" variant="outline">
@@ -215,7 +215,7 @@ function Field({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex flex-col gap-1.5">
+    <div className="flex w-full flex-col gap-1.5 sm:w-auto">
       <Label className="text-xs text-muted-foreground">{label}</Label>
       {children}
     </div>

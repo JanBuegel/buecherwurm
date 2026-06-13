@@ -57,7 +57,7 @@ export function FilterBar({
   );
 
   return (
-    <div className="flex flex-wrap items-center gap-2">
+    <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
       <Input
         value={q}
         onChange={(e) => setQ(e.target.value)}
@@ -65,77 +65,80 @@ export function FilterBar({
         className="w-full sm:w-64"
       />
 
-      <select
-        value={values.owner ?? ""}
-        onChange={(e) => apply("owner", e.target.value)}
-        className={`${selectClass} w-auto`}
-        aria-label="Inhaber"
-      >
-        <option value="">Alle Inhaber</option>
-        {persons.map((p) => (
-          <option key={p.id} value={p.id}>
-            {p.name}
-          </option>
-        ))}
-      </select>
-
-      <select
-        value={values.room ?? ""}
-        onChange={(e) => apply("room", e.target.value)}
-        className={`${selectClass} w-auto`}
-        aria-label="Raum"
-      >
-        <option value="">Alle Räume</option>
-        <option value="none">Im Stapel</option>
-        {rooms.map((r) => (
-          <option key={r.id} value={r.id}>
-            {r.name}
-          </option>
-        ))}
-      </select>
-
-      <select
-        value={values.status ?? ""}
-        onChange={(e) => apply("status", e.target.value)}
-        className={`${selectClass} w-auto`}
-        aria-label="Status"
-      >
-        <option value="">Alle Status</option>
-        {STATUS_OPTIONS.map((s) => (
-          <option key={s.value} value={s.value}>
-            {s.label}
-          </option>
-        ))}
-      </select>
-
-      {tags.length ? (
+      {/* On mobile a tidy 2-column grid; inline from sm upwards. */}
+      <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-center">
         <select
-          value={values.tag ?? ""}
-          onChange={(e) => apply("tag", e.target.value)}
-          className={`${selectClass} w-auto`}
-          aria-label="Tag"
+          value={values.owner ?? ""}
+          onChange={(e) => apply("owner", e.target.value)}
+          className={`${selectClass} sm:w-auto`}
+          aria-label="Inhaber"
         >
-          <option value="">Alle Tags</option>
-          {tags.map((t) => (
-            <option key={t.id} value={t.id}>
-              {t.name}
+          <option value="">Alle Inhaber</option>
+          {persons.map((p) => (
+            <option key={p.id} value={p.id}>
+              {p.name}
             </option>
           ))}
         </select>
-      ) : null}
 
-      {hasFilters ? (
-        <button
-          type="button"
-          onClick={() => {
-            setQ("");
-            startTransition(() => router.replace(pathname));
-          }}
-          className="text-sm text-muted-foreground hover:text-foreground hover:underline"
+        <select
+          value={values.room ?? ""}
+          onChange={(e) => apply("room", e.target.value)}
+          className={`${selectClass} sm:w-auto`}
+          aria-label="Raum"
         >
-          zurücksetzen
-        </button>
-      ) : null}
+          <option value="">Alle Räume</option>
+          <option value="none">Im Stapel</option>
+          {rooms.map((r) => (
+            <option key={r.id} value={r.id}>
+              {r.name}
+            </option>
+          ))}
+        </select>
+
+        <select
+          value={values.status ?? ""}
+          onChange={(e) => apply("status", e.target.value)}
+          className={`${selectClass} sm:w-auto`}
+          aria-label="Status"
+        >
+          <option value="">Alle Status</option>
+          {STATUS_OPTIONS.map((s) => (
+            <option key={s.value} value={s.value}>
+              {s.label}
+            </option>
+          ))}
+        </select>
+
+        {tags.length ? (
+          <select
+            value={values.tag ?? ""}
+            onChange={(e) => apply("tag", e.target.value)}
+            className={`${selectClass} sm:w-auto`}
+            aria-label="Tag"
+          >
+            <option value="">Alle Tags</option>
+            {tags.map((t) => (
+              <option key={t.id} value={t.id}>
+                {t.name}
+              </option>
+            ))}
+          </select>
+        ) : null}
+
+        {hasFilters ? (
+          <button
+            type="button"
+            onClick={() => {
+              setQ("");
+              startTransition(() => router.replace(pathname));
+            }}
+            className="col-span-2 h-9 rounded-md text-sm text-muted-foreground hover:text-foreground hover:underline sm:col-auto sm:h-auto"
+          >
+            zurücksetzen
+          </button>
+        ) : null}
+      </div>
     </div>
   );
 }

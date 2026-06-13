@@ -18,12 +18,18 @@ export async function SiteHeader() {
 
   return (
     <header className="sticky top-0 z-40 border-b bg-background/80 backdrop-blur">
-      <div className="mx-auto flex max-w-5xl flex-wrap items-center gap-x-2 gap-y-1 px-3 py-2 sm:px-4">
-        <Link href="/" className="mr-1 font-bold whitespace-nowrap sm:mr-2">
+      <div className="mx-auto flex max-w-5xl items-center gap-2 px-3 py-2 sm:px-4">
+        <Link
+          href="/"
+          className="shrink-0 font-bold whitespace-nowrap"
+        >
           📚 <span className="hidden min-[420px]:inline">Bücherwurm</span>
         </Link>
-        <NavLinks items={items} />
-        <div className="ml-auto flex items-center gap-2">
+        {/* Nav scrolls horizontally instead of wrapping when space is tight. */}
+        <div className="min-w-0 flex-1 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <NavLinks items={items} />
+        </div>
+        <div className="flex shrink-0 items-center gap-2">
           <span className="hidden text-sm text-muted-foreground sm:inline">
             {user.name}
           </span>
