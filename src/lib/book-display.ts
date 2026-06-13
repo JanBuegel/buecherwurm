@@ -24,6 +24,21 @@ export function statusLabel(status: string): string {
   return STATUS_MAP[status] ?? status;
 }
 
+/** Soft tinted badge classes per status. */
+export const STATUS_TONE: Record<string, string> = {
+  available:
+    "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300",
+  reading: "bg-sky-100 text-sky-700 dark:bg-sky-950/60 dark:text-sky-300",
+  read: "bg-violet-100 text-violet-700 dark:bg-violet-950/60 dark:text-violet-300",
+  lent: "bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300",
+};
+
+export function statusTone(status: string): string {
+  return (
+    STATUS_TONE[status] ?? "bg-muted text-muted-foreground"
+  );
+}
+
 export function conditionLabel(condition: string | null): string | null {
   if (!condition) return null;
   return CONDITION_MAP[condition] ?? condition;
