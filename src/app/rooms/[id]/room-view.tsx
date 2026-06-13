@@ -66,7 +66,8 @@ export function RoomView({
 
   function openCopy(id: string) {
     if (draggedRef.current) return; // suppress click right after a drag
-    router.push(`/books/${id}`);
+    // Remember the room so the detail page can offer "back to the shelf".
+    router.push(`/books/${id}?from=${encodeURIComponent(`/rooms/${room.id}`)}`);
   }
 
   function onDragStart(e: DragStartEvent) {

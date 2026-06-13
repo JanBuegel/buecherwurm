@@ -22,13 +22,21 @@ import { DeleteCopyButton } from "./delete-copy-button";
 
 export default async function CopyDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ from?: string }>;
 }) {
   await requireUser();
   const user = await getCurrentUser();
   const isOwner = user?.role === "owner";
   const { id } = await params;
+  const { from } = await searchParams;
+
+  // Return to the originating shelf when arriving from a room; else the list.
+  const backToRoom = typeof from === "string" && from.startsWith("/rooms/");
+  const backHref = backToRoom ? from : "/books";
+  const backLabel = backToRoom ? "← Zurück ins Regal" : "← Zum Bestand";
 
   const copy = await db.query.copies.findFirst({
     where: eq(copies.id, id),
@@ -57,10 +65,10 @@ export default async function CopyDetailPage({
     <main className="mx-auto flex w-full max-w-3xl flex-col gap-6 p-6 sm:p-8">
       <div className="flex items-center justify-between">
         <Link
-          href="/books"
+          href={backHref}
           className="text-sm text-muted-foreground hover:underline"
         >
-          ← Zum Bestand
+          {backLabel}
         </Link>
         {isOwner ? (
           <div className="flex gap-2">
