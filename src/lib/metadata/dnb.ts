@@ -15,7 +15,13 @@ type Subfield = { "@_code": string; "#text"?: string | number };
 type Datafield = { "@_tag": string; subfield?: Subfield[] };
 
 function asText(value: unknown): string {
-  return value == null ? "" : String(value).trim();
+  if (value == null) return "";
+  // DNB marks non-filing characters with C1 control chars (e.g. the article in
+  // "Die zwei Türme"). They arrive raw or as numeric entities — strip both.
+  return String(value)
+    .replace(/&#1[2-5][0-9];/g, "")
+    .replace(/[\u0080-\u009F]/g, "")
+    .trim();
 }
 
 function datafields(record: Record<string, unknown>, tag: string): Datafield[] {

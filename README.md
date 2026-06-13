@@ -89,4 +89,4 @@ Der Container läuft dann auf Port **3000**. Beim Start werden automatisch die
 3. ✅ Verwalten (Liste, Suche, Filter, Detail, Bearbeiten, Löschen)
 4. ✅ Verwaltung & Backup (Personen, Benutzer, Räume, Tags, Profil, Cover-Upload, CSV Export/Import)
 5. ✅ Fancy Bücherregal (Möbel-Editor KALLAX/IVAR/BILLY/custom, gerenderte Buchrücken, Drag & Drop vom Raum-Stapel ins Fach) — `/rooms`
-6. Mobile Scan-PWA, Verleih, Statistiken
+6. ⏳ Phase 6: ✅ Kamera-Barcode-Scan beim Erfassen · ⏳ Verleih, Statistiken

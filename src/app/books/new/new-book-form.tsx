@@ -16,6 +16,7 @@ import {
   lookupBookAction,
 } from "../actions";
 import { Field, selectClass } from "../form-ui";
+import { BarcodeScanner } from "./barcode-scanner";
 
 type Option = { id: string; name: string };
 
@@ -69,17 +70,18 @@ export function NewBookForm({
   const set = (key: keyof MetaForm, value: string) =>
     setForm((f) => ({ ...f, [key]: value }));
 
-  function runLookup() {
-    if (!form.ean.trim()) {
+  function runLookup(codeArg?: string) {
+    const code = (codeArg ?? form.ean).trim();
+    if (!code) {
       setLookupMsg("Bitte zuerst eine EAN/ISBN eingeben.");
       return;
     }
     startTransition(async () => {
-      const result = await lookupBookAction(form.ean);
+      const result = await lookupBookAction(code);
       if (result.status === "found") {
         const m = result.meta;
         setForm({
-          ean: m.ean ?? form.ean,
+          ean: m.ean ?? code,
           isbn10: m.isbn10 ?? "",
           title: m.title,
           subtitle: m.subtitle ?? "",
@@ -122,7 +124,7 @@ export function NewBookForm({
           <CardTitle className="text-base">EAN / ISBN</CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col gap-2">
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <Input
               name="ean"
               value={form.ean}
@@ -135,10 +137,17 @@ export function NewBookForm({
               }}
               placeholder="z. B. 9783499256356"
               autoFocus
+              className="min-w-40 flex-1"
             />
-            <Button type="button" onClick={runLookup} disabled={pending}>
+            <Button type="button" onClick={() => runLookup()} disabled={pending}>
               {pending ? "Suche …" : "Suchen"}
             </Button>
+            <BarcodeScanner
+              onDetect={(code) => {
+                set("ean", code);
+                runLookup(code);
+              }}
+            />
           </div>
           {lookupMsg ? (
             <p className="text-sm text-muted-foreground">{lookupMsg}</p>

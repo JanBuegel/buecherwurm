@@ -1,6 +1,7 @@
 import { isbn10to13, isValidIsbn, isValidIsbn13, normalizeIsbn } from "../isbn";
 import { lookupDnb } from "./dnb";
 import { lookupGoogle } from "./google";
+import { coverFromGoogleThumbnail } from "./google-thumb";
 import { lookupOpenLibrary } from "./openlibrary";
 import type { BookMetadata } from "./types";
 
@@ -32,12 +33,16 @@ export async function lookupByEan(
   const timeout = setTimeout(() => controller.abort(), 8000);
 
   let settled: PromiseSettledResult<BookMetadata | null>[];
+  let googleThumb: string | null = null;
   try {
-    settled = await Promise.allSettled([
+    const [dnbR, googleR, olR, thumbR] = await Promise.allSettled([
       lookupDnb(isbn, controller.signal),
       lookupGoogle(isbn, controller.signal),
       lookupOpenLibrary(isbn, controller.signal),
+      coverFromGoogleThumbnail(isbn, controller.signal),
     ]);
+    settled = [dnbR, googleR, olR];
+    googleThumb = thumbR.status === "fulfilled" ? thumbR.value : null;
   } finally {
     clearTimeout(timeout);
   }
@@ -75,7 +80,13 @@ export async function lookupByEan(
     language: firstStr([dnb?.language, google?.language, ol?.language]),
     // DNB rarely has these — prefer Google then Open Library.
     description: firstStr([google?.description, ol?.description, dnb?.description]),
-    coverUrl: firstStr([google?.coverUrl, ol?.coverUrl, dnb?.coverUrl]),
+    // Cover priority: keyed Google API → keyless Google thumbnail → Open Library.
+    coverUrl: firstStr([
+      google?.coverUrl,
+      googleThumb,
+      ol?.coverUrl,
+      dnb?.coverUrl,
+    ]),
     sources: present.flatMap((m) => m.sources),
   };
 }
