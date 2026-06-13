@@ -1,0 +1,22 @@
+services:
+  buecherwurm:
+    build: .
+    image: buecherwurm
+    container_name: buecherwurm
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      # Required: sign Auth.js sessions. Generate with: openssl rand -base64 32
+      AUTH_SECRET: ${AUTH_SECRET:?set AUTH_SECRET in .env}
+      # Public URL of the app (used by Auth.js). Adjust for your domain.
+      AUTH_URL: ${AUTH_URL:-http://localhost:3000}
+      AUTH_TRUST_HOST: "true"
+      # Optional: enables Google Books as an extra metadata source.
+      # GOOGLE_BOOKS_API_KEY: ${GOOGLE_BOOKS_API_KEY:-}
+    volumes:
+      # Persists the SQLite database AND uploaded cover images.
+      - buecherwurm-data:/app/data
+
+volumes:
+  buecherwurm-data:

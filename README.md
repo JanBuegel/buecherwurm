@@ -36,6 +36,29 @@ npm run dev
 Standard-Owner aus dem Seed: **jab@tickettoaster.de** / Passwort **buecherwurm**
 (nach dem ersten Login ändern).
 
+## Deployment via Docker
+
+```bash
+# AUTH_SECRET erzeugen und in .env ablegen (von docker compose gelesen)
+echo "AUTH_SECRET=$(openssl rand -base64 32)" >> .env
+# optional die öffentliche URL setzen:
+echo "AUTH_URL=https://buecher.example.com" >> .env
+
+# Bauen & starten
+docker compose up -d --build
+```
+
+Der Container läuft dann auf Port **3000**. Beim Start werden automatisch die
+**Migrationen** angewendet und der **Seed** (idempotent) eingespielt.
+
+- **Persistenz:** SQLite-DB *und* hochgeladene Cover liegen unter `/app/data`,
+  gemountet als Named Volume `buecherwurm-data`. Backup = dieses Volume sichern
+  (oder via Einstellungen → Backup als CSV exportieren).
+- **Hinter Reverse-Proxy:** `AUTH_URL` auf die öffentliche URL setzen;
+  `trustHost` ist bereits aktiv.
+- **Google Books (optional):** `GOOGLE_BOOKS_API_KEY` in der `.env` setzen und
+  in `docker-compose.yml` einkommentieren.
+
 ## Nützliche Scripts
 
 | Script | Zweck |

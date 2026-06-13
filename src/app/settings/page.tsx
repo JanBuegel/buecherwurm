@@ -55,8 +55,8 @@ function SettingCard({
   desc: string;
 }) {
   return (
-    <Link href={href}>
-      <Card className="transition-colors hover:bg-muted/40">
+    <Link href={href} className="block h-full">
+      <Card className="h-full transition-colors hover:bg-muted/40">
         <CardHeader>
           <CardTitle className="text-base">{title}</CardTitle>
           <CardDescription>{desc}</CardDescription>

@@ -6,6 +6,8 @@ import { users } from "@/db/schema";
 import { verifyPassword } from "@/lib/password";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
+  // Trust the host header — required when self-hosting behind a proxy/container.
+  trustHost: true,
   session: { strategy: "jwt" },
   pages: {
     signIn: "/login",
