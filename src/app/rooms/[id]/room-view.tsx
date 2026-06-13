@@ -94,7 +94,7 @@ export function RoomView({
   }
 
   return (
-    <main className="mx-auto flex max-w-5xl flex-col gap-6 p-6 sm:p-8">
+    <main className="mx-auto flex w-full max-w-6xl flex-col gap-6 p-6 sm:p-8">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">{room.name}</h1>
@@ -111,6 +111,7 @@ export function RoomView({
       </div>
 
       <DndContext
+        id="room-dnd"
         sensors={sensors}
         onDragStart={onDragStart}
         onDragEnd={onDragEnd}
@@ -143,7 +144,7 @@ export function RoomView({
 
         <DragOverlay>
           {activeCopy ? (
-            <div className="h-28" style={{ width: spineWidthPx(activeCopy.pageCount) }}>
+            <div style={{ height: 224, width: spineWidthPx(activeCopy.pageCount) }}>
               <Spine copy={activeCopy} />
             </div>
           ) : null}
@@ -173,10 +174,10 @@ function FurniturePiece({
   onOpen: (id: string) => void;
 }) {
   const color = f.color ?? "#b08968";
-  const cellH = f.kind === "kallax" ? 132 : 104;
+  const cellH = f.kind === "kallax" ? 264 : 208;
   // Compartments fill the available width (min per column so they stay roomy);
   // many books then shrink to fit inside each compartment.
-  const minCol = f.kind === "kallax" ? 150 : 210;
+  const minCol = f.kind === "kallax" ? 300 : 420;
 
   return (
     <section className="flex flex-col gap-2">
@@ -274,7 +275,7 @@ function Stack({
       </h2>
       <div
         ref={setNodeRef}
-        className={`flex min-h-28 flex-wrap items-end gap-[3px] rounded-lg border-2 border-dashed bg-muted/30 p-3 ${
+        className={`flex min-h-[224px] flex-wrap items-end gap-[3px] rounded-lg border-2 border-dashed bg-muted/30 p-3 ${
           isOver ? "border-amber-400 bg-amber-50" : ""
         }`}
       >
@@ -289,7 +290,7 @@ function Stack({
               copy={copy}
               enabled={draggable}
               onOpen={onOpen}
-              height={96}
+              height={192}
             />
           ))
         )}

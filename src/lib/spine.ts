@@ -1,7 +1,7 @@
 /** Spine width in px derived from page count (thicker book = wider spine). */
 export function spineWidthPx(pageCount: number | null): number {
-  if (!pageCount) return 26;
-  return Math.max(16, Math.min(48, Math.round(pageCount / 16) + 14));
+  if (!pageCount) return 64;
+  return Math.max(44, Math.min(120, Math.round(pageCount / 6) + 36));
 }
 
 const PALETTE = [

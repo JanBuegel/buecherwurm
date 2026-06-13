@@ -27,8 +27,8 @@ function miniSpines(seed: string, count: number) {
     for (let j = 0; j < s.length; j++) h = (h * 31 + s.charCodeAt(j)) >>> 0;
     spines.push({
       color: SPINE_PALETTE[h % SPINE_PALETTE.length],
-      height: 30 + (h % 30),
-      width: 5 + (h % 5),
+      height: 45 + (h % 45),
+      width: 7 + (h % 7),
     });
   }
   return spines;
@@ -50,7 +50,7 @@ export default async function RoomsPage() {
   ).filter((c) => c.roomId === null).length;
 
   return (
-    <main className="mx-auto flex w-full max-w-4xl flex-col gap-6 p-6 sm:p-8">
+    <main className="mx-auto flex w-full max-w-6xl flex-col gap-6 p-6 sm:p-8">
       <h1 className="text-2xl font-bold">🏠 Räume</h1>
 
       {roomList.length === 0 ? (
@@ -61,7 +61,7 @@ export default async function RoomsPage() {
           </Link>
         </div>
       ) : (
-        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {roomList.map((room) => {
             const shelved = room.copies.filter((c) => c.compartmentId).length;
             const stacked = room.copies.length - shelved;
@@ -71,7 +71,7 @@ export default async function RoomsPage() {
                 <article className="flex h-full flex-col overflow-hidden rounded-2xl border bg-card shadow-sm ring-1 ring-foreground/5 transition-all duration-200 group-hover:-translate-y-1 group-hover:shadow-xl group-hover:ring-foreground/15">
                   {/* decorative shelf band */}
                   <div
-                    className="relative h-24"
+                    className="relative h-36"
                     style={{
                       backgroundColor: "#b08968",
                       backgroundImage:

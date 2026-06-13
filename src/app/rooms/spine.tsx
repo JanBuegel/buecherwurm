@@ -27,13 +27,13 @@ export function Spine({
 
   // Show more text lines for chunkier books.
   const lines: { text: string; cls: string }[] = [
-    { text: copy.title, cls: "text-[10px] font-semibold" },
+    { text: copy.title, cls: "text-base font-bold" },
   ];
-  if (copy.subtitle && natural >= 34) {
-    lines.push({ text: copy.subtitle, cls: "text-[8px] italic opacity-75" });
+  if (copy.subtitle && natural >= 52) {
+    lines.push({ text: copy.subtitle, cls: "text-[15px] italic opacity-85" });
   }
-  if (copy.author && natural >= 22) {
-    lines.push({ text: copy.author, cls: "text-[8px] opacity-80" });
+  if (copy.author) {
+    lines.push({ text: copy.author, cls: "text-[13px] opacity-85" });
   }
 
   return (

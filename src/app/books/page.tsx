@@ -79,7 +79,7 @@ export default async function BooksPage({
   );
 
   return (
-    <main className="mx-auto flex max-w-4xl flex-col gap-6 p-6 sm:p-8">
+    <main className="mx-auto flex w-full max-w-6xl flex-col gap-6 p-6 sm:p-8">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">Bestand</h1>
@@ -127,7 +127,7 @@ export default async function BooksPage({
           ) : null}
         </div>
       ) : (
-        <ul className="flex flex-col gap-3">
+        <ul className="grid gap-4 sm:grid-cols-2">
           {filtered.map((copy) => {
             const authors = copy.book.authors ?? [];
             const tagNames = copy.copyTags.map((ct) => ct.tag.name);
@@ -135,24 +135,31 @@ export default async function BooksPage({
               <li key={copy.id}>
                 <Link
                   href={`/books/${copy.id}`}
-                  className="flex gap-4 rounded-xl border bg-card p-3 shadow-sm ring-1 ring-foreground/5 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md hover:ring-foreground/15"
+                  className="flex gap-5 rounded-xl border bg-card p-4 shadow-sm ring-1 ring-foreground/5 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md hover:ring-foreground/15"
                 >
                   {copy.book.coverUrl ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
                       src={copy.book.coverUrl}
                       alt=""
-                      className="h-24 w-16 shrink-0 rounded border object-cover"
+                      className="h-40 w-28 shrink-0 rounded border object-cover"
                     />
                   ) : (
-                    <div className="flex h-24 w-16 shrink-0 items-center justify-center rounded border border-dashed text-center text-[10px] text-muted-foreground">
+                    <div className="flex h-40 w-28 shrink-0 items-center justify-center rounded border border-dashed text-center text-xs text-muted-foreground">
                       kein Cover
                     </div>
                   )}
-                  <div className="flex min-w-0 flex-1 flex-col gap-1">
+                  <div className="flex min-w-0 flex-1 flex-col gap-1.5">
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0">
-                        <p className="truncate font-medium">{copy.book.title}</p>
+                        <p className="truncate text-lg font-semibold">
+                          {copy.book.title}
+                        </p>
+                        {copy.book.subtitle ? (
+                          <p className="truncate text-sm text-muted-foreground">
+                            {copy.book.subtitle}
+                          </p>
+                        ) : null}
                         {authors.length ? (
                           <p className="truncate text-sm text-muted-foreground">
                             {authors.join(", ")}
