@@ -32,6 +32,13 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+!.env.example
+
+# local sqlite database
+/data/
+*.db
+*.db-shm
+*.db-wal
 
 # vercel
 .vercel
@@ -39,3 +46,16 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# editors
+.idea/
+.vscode/*
+!.vscode/extensions.json
+*.swp
+
+# logs
+*.log
+logs/
+
+# claude code (keep shared settings, ignore local overrides)
+.claude/settings.local.json

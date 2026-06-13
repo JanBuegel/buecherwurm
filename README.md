@@ -1,36 +1,65 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 📚 Bücherwurm
 
-## Getting Started
+Tool zur Erfassung des eigenen Bücherbestands — mit Inhaber-Zuordnung, EAN-Erfassung,
+automatischem Cover-/Metadaten-Abruf, Standortverwaltung, Tags, Owner/Viewer-Rollen
+und (als Kirsche) einem gerenderten Bücherregal.
 
-First, run the development server:
+## Stack
+
+- **Next.js 16** (App Router, Turbopack) + **TypeScript** + **React 19**
+- **Tailwind CSS v4** + **shadcn/ui**
+- **Drizzle ORM** + **better-sqlite3** (lokale SQLite-Datei)
+- **Auth.js v5** (Credentials: E-Mail + Passwort), Rollen `owner` / `viewer`
+- Node-Version via **mise** gepinnt (`mise.toml`)
+
+## Setup
 
 ```bash
+# Node-Version bereitstellen (mise)
+mise install
+
+# Abhängigkeiten
+npm install
+
+# Env-Datei anlegen und AUTH_SECRET setzen
+cp .env.example .env
+# AUTH_SECRET generieren: openssl rand -base64 32
+
+# Datenbank migrieren und Seed einspielen
+npm run db:migrate
+npm run db:seed
+
+# Dev-Server
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Standard-Owner aus dem Seed: **jab@tickettoaster.de** / Passwort **buecherwurm**
+(nach dem ersten Login ändern).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Nützliche Scripts
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Script | Zweck |
+| --- | --- |
+| `npm run dev` | Dev-Server (Turbopack) |
+| `npm run build` | Production-Build |
+| `npm run db:generate` | Migration aus dem Schema generieren |
+| `npm run db:migrate` | Migrationen anwenden |
+| `npm run db:seed` | Seed (Owner + Beispiel-Regal) |
+| `npm run db:studio` | Drizzle Studio (DB-Browser) |
 
-## Learn More
+## Datenmodell (Kurzform)
 
-To learn more about Next.js, take a look at the following resources:
+- **books** — bibliografischer Datensatz (per EAN dedupliziert)
+- **copies** — physisches Exemplar (→ book, owner, shelf, Status, Zustand, Position fürs Regal)
+- **shelves** — Regal (Einheit fürs Bücherregal-Rendering)
+- **tags** / **copy_tags** — frei vergebbare Tags (n:m an copies)
+- **users** — Owner / Viewer
+- **loans** — Verleih-Historie
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Roadmap
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+1. ✅ Fundament (Scaffold, Datenmodell, Auth, Migrationen)
+2. ⏳ Erfassen (EAN → Metadaten via DNB → Google Books → Open Library)
+3. Verwalten (Liste, Suche, Filter, Detail)
+4. 🍒 Bücherregal (gerenderte Buchrücken + Drag & Drop)
+5. Rollen-Feinschliff, mobile Scan-PWA, Verleih, Statistiken
