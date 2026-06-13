@@ -65,5 +65,5 @@ Standard-Owner aus dem Seed: **jab@tickettoaster.de** / Passwort **buecherwurm**
 2. ✅ Erfassen (EAN → Metadaten via DNB → Open Library → Google Books optional)
 3. ✅ Verwalten (Liste, Suche, Filter, Detail, Bearbeiten, Löschen)
 4. ✅ Verwaltung & Backup (Personen, Benutzer, Räume, Tags, Profil, Cover-Upload, CSV Export/Import)
-5. 🍒 Fancy Bücherregal (Möbel-Editor mit Presets KALLAX/IVAR, gerenderte Buchrücken, Drag & Drop vom Raum-Stapel ins Fach)
+5. ✅ Fancy Bücherregal (Möbel-Editor KALLAX/IVAR/BILLY/custom, gerenderte Buchrücken, Drag & Drop vom Raum-Stapel ins Fach) — `/rooms`
 6. Mobile Scan-PWA, Verleih, Statistiken

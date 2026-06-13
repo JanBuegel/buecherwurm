@@ -54,12 +54,14 @@ export function ConfirmButton({
   action,
   id,
   fieldName = "id",
+  extraFields,
   label = "Löschen",
   size = "sm",
 }: {
   action: (formData: FormData) => Promise<void>;
   id: string;
   fieldName?: string;
+  extraFields?: Record<string, string>;
   label?: string;
   size?: "sm" | "xs" | "default";
 }) {
@@ -81,6 +83,11 @@ export function ConfirmButton({
   return (
     <form action={action} className="inline-flex items-center gap-1">
       <input type="hidden" name={fieldName} value={id} />
+      {extraFields
+        ? Object.entries(extraFields).map(([k, v]) => (
+            <input key={k} type="hidden" name={k} value={v} />
+          ))
+        : null}
       <Button size={size} variant="destructive" type="submit">
         Ja
       </Button>

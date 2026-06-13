@@ -46,6 +46,13 @@ export default async function Home() {
             <Button nativeButton={false} render={<Link href="/books" />}>
               📚 Bestand ansehen
             </Button>
+            <Button
+              variant="outline"
+              nativeButton={false}
+              render={<Link href="/rooms" />}
+            >
+              🪵 Regale
+            </Button>
             {user.role === "owner" ? (
               <Button
                 variant="outline"
