@@ -60,6 +60,6 @@ Standard-Owner aus dem Seed: **jab@tickettoaster.de** / Passwort **buecherwurm**
 
 1. ✅ Fundament (Scaffold, Datenmodell, Auth, Migrationen)
 2. ✅ Erfassen (EAN → Metadaten via DNB → Open Library → Google Books optional)
-3. ⏳ Verwalten (Liste, Suche, Filter, Detail)
+3. ✅ Verwalten (Liste, Suche, Filter, Detail, Bearbeiten, Löschen)
 4. 🍒 Bücherregal (gerenderte Buchrücken + Drag & Drop)
 5. Rollen-Feinschliff, mobile Scan-PWA, Verleih, Statistiken

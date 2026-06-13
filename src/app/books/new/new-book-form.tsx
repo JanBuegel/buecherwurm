@@ -9,14 +9,13 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { cn } from "@/lib/utils";
 import {
   createCopyAction,
   type CreateState,
   lookupBookAction,
 } from "../actions";
+import { Field, selectClass } from "../form-ui";
 
 type Option = { id: string; name: string; room?: string | null };
 
@@ -49,9 +48,6 @@ const EMPTY: MetaForm = {
   coverUrl: "",
   metadataSource: "",
 };
-
-const selectClass =
-  "h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 dark:bg-input/30";
 
 export function NewBookForm({
   owners,
@@ -311,22 +307,5 @@ export function NewBookForm({
         </Button>
       </div>
     </form>
-  );
-}
-
-function Field({
-  label,
-  className,
-  children,
-}: {
-  label: string;
-  className?: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className={cn("flex flex-col gap-1.5", className)}>
-      <Label className="text-xs text-muted-foreground">{label}</Label>
-      {children}
-    </div>
   );
 }
