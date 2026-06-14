@@ -2,6 +2,8 @@
 
 import { readableText, spineColorFor, spineWidthPx } from "@/lib/spine";
 
+export type SpineTag = { id: string; name: string; color: string | null };
+
 export type SpineCopy = {
   id: string;
   title: string;
@@ -9,6 +11,7 @@ export type SpineCopy = {
   author: string | null;
   pageCount: number | null;
   spineColor: string | null;
+  tags: SpineTag[];
 };
 
 /** A single rendered book spine (presentational; drag handled by the parent). */

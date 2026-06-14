@@ -41,6 +41,9 @@ export default async function RoomDetailPage({
             pageCount: true,
           },
         },
+        copyTags: {
+          with: { tag: { columns: { id: true, name: true, color: true } } },
+        },
       },
     }),
   ]);
@@ -70,6 +73,11 @@ export default async function RoomDetailPage({
         author: c.book.authors?.[0] ?? null,
         pageCount: c.book.pageCount,
         spineColor: c.spineColor,
+        tags: c.copyTags.map((ct) => ({
+          id: ct.tag.id,
+          name: ct.tag.name,
+          color: ct.tag.color,
+        })),
       }))}
     />
   );

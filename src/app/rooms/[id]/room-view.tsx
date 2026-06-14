@@ -14,9 +14,9 @@ import {
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useOptimistic, useRef, useState, useTransition } from "react";
-import { spineWidthPx } from "@/lib/spine";
+import { readableText, spineWidthPx } from "@/lib/spine";
 import { placeCopyAction } from "../actions";
-import { Spine, type SpineCopy } from "../spine";
+import { Spine, type SpineCopy, type SpineTag } from "../spine";
 import { AddFurnitureForm } from "./add-furniture-form";
 import { FurnitureEditor } from "./furniture-editor";
 
@@ -206,23 +206,32 @@ function FurniturePiece({
           }}
         >
           <div
-            className="grid gap-2"
+            className="grid gap-3"
             style={{
               gridTemplateColumns: `repeat(${f.columns}, minmax(${minCol}px, 1fr))`,
             }}
           >
-            {f.compartments.map((c) => (
-              <Compartment key={c.id} compartmentId={c.id} height={cellH}>
-                {copiesByCompartment(c.id).map((copy) => (
-                  <DraggableSpine
-                    key={copy.id}
-                    copy={copy}
-                    enabled={draggable}
-                    onOpen={onOpen}
-                  />
-                ))}
-              </Compartment>
-            ))}
+            {f.compartments.map((c) => {
+              const cCopies = copiesByCompartment(c.id);
+              const cTags = dedupeTags(cCopies.flatMap((copy) => copy.tags));
+              return (
+                <Compartment
+                  key={c.id}
+                  compartmentId={c.id}
+                  height={cellH}
+                  tags={cTags}
+                >
+                  {cCopies.map((copy) => (
+                    <DraggableSpine
+                      key={copy.id}
+                      copy={copy}
+                      enabled={draggable}
+                      onOpen={onOpen}
+                    />
+                  ))}
+                </Compartment>
+              );
+            })}
           </div>
         </div>
       </div>
@@ -233,25 +242,31 @@ function FurniturePiece({
 function Compartment({
   compartmentId,
   height,
+  tags,
   children,
 }: {
   compartmentId: string;
   height: number;
+  tags: SpineTag[];
   children: React.ReactNode;
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: `comp:${compartmentId}` });
   return (
-    <div
-      ref={setNodeRef}
-      style={{ height }}
-      className={`relative overflow-hidden rounded-sm bg-black/25 shadow-[inset_0_2px_7px_rgba(0,0,0,.5)] ${
-        isOver ? "ring-2 ring-inset ring-amber-300" : ""
-      }`}
-    >
-      <div className="flex h-full items-end gap-[2px] overflow-x-auto px-1 pt-2 pb-[3px]">
-        {children}
+    <div className="flex flex-col">
+      <div
+        ref={setNodeRef}
+        style={{ height }}
+        className={`relative overflow-hidden rounded-sm bg-black/25 shadow-[inset_0_2px_7px_rgba(0,0,0,.5)] ${
+          isOver ? "ring-2 ring-inset ring-amber-300" : ""
+        }`}
+      >
+        <div className="flex h-full items-end gap-[2px] overflow-x-auto px-1 pt-2 pb-[3px]">
+          {children}
+        </div>
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-2 bg-gradient-to-b from-black/35 to-black/60 shadow-[0_-1px_2px_rgba(0,0,0,.4)]" />
       </div>
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-[3px] bg-black/40" />
+      {/* board between compartments: all tags shelved in this compartment */}
+      {tags.length ? <CompartmentTags tags={tags} /> : null}
     </div>
   );
 }
@@ -335,6 +350,48 @@ function DraggableSpine({
       className={height ? undefined : "h-full"}
     >
       <Spine copy={copy} dragging={isDragging} />
+    </div>
+  );
+}
+
+/** Stable per-id dedupe, preserving first-seen order. */
+function dedupeTags(tags: SpineTag[]): SpineTag[] {
+  const seen = new Set<string>();
+  const out: SpineTag[] = [];
+  for (const t of tags) {
+    if (seen.has(t.id)) continue;
+    seen.add(t.id);
+    out.push(t);
+  }
+  return out;
+}
+
+/**
+ * Hand-stuck label stickers on the board below a compartment, showing every
+ * tag of the books shelved in it — read a shelf's categories at a glance.
+ */
+const STICKER_ROTATIONS = [-2.5, 1.5, -1.5, 2, -2, 1];
+
+function CompartmentTags({ tags }: { tags: SpineTag[] }) {
+  return (
+    <div className="flex flex-wrap items-center gap-2 px-2 pt-2 pb-1">
+      {tags.map((t, i) => {
+        const bg = t.color ?? "#9ca3af";
+        return (
+          <span
+            key={t.id}
+            title={t.name}
+            style={{
+              backgroundColor: bg,
+              color: readableText(bg),
+              transform: `rotate(${STICKER_ROTATIONS[i % STICKER_ROTATIONS.length]}deg)`,
+            }}
+            className="max-w-[14rem] truncate rounded-[3px] border border-white/90 px-2 py-0.5 text-[13px] font-semibold leading-tight shadow-[0_1px_2px_rgba(0,0,0,.35)]"
+          >
+            {t.name}
+          </span>
+        );
+      })}
     </div>
   );
 }
