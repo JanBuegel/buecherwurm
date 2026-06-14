@@ -46,7 +46,7 @@ export default async function BooksPage({
       orderBy: asc(roomsTable.sortIndex),
     }),
     db.query.tags.findMany({
-      columns: { id: true, name: true },
+      columns: { id: true, name: true, color: true },
       orderBy: asc(tagsTable.name),
     }),
   ]);

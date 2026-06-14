@@ -4,9 +4,15 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { Input } from "@/components/ui/input";
 import { STATUS_OPTIONS } from "@/lib/book-display";
+import { readableText } from "@/lib/spine";
 import { selectClass } from "./form-ui";
 
-type Option = { id: string; name: string; room?: string | null };
+type Option = {
+  id: string;
+  name: string;
+  room?: string | null;
+  color?: string | null;
+};
 
 export function FilterBar({
   persons,
@@ -150,16 +156,25 @@ export function FilterBar({
           <span className="text-sm text-muted-foreground">🏷️ Tags:</span>
           {tags.map((t) => {
             const active = activeTags.has(t.id);
+            // Coloured tags: filled when active, softly tinted when inactive.
+            const style = t.color
+              ? active
+                ? { backgroundColor: t.color, color: readableText(t.color), borderColor: "transparent" }
+                : { backgroundColor: `${t.color}1f`, color: t.color, borderColor: `${t.color}55` }
+              : undefined;
             return (
               <button
                 key={t.id}
                 type="button"
                 onClick={() => toggleMulti("tag", t.id)}
                 aria-pressed={active}
+                style={style}
                 className={`rounded-full border px-2.5 py-1 text-sm transition-colors ${
-                  active
-                    ? "border-transparent bg-primary text-primary-foreground"
-                    : "text-muted-foreground hover:border-foreground/30 hover:text-foreground"
+                  t.color
+                    ? "font-medium"
+                    : active
+                      ? "border-transparent bg-primary text-primary-foreground"
+                      : "text-muted-foreground hover:border-foreground/30 hover:text-foreground"
                 }`}
               >
                 {t.name}

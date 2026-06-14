@@ -145,7 +145,7 @@ export function BookList({
             <CardInner item={item} selecting={selecting} selected={isSel} />
           );
           return (
-            <li key={item.id}>
+            <li key={item.id} className="min-w-0">
               {selecting ? (
                 <button
                   type="button"
