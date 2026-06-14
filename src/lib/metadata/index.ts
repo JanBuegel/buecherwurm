@@ -1,8 +1,8 @@
 import { isbn10to13, isValidIsbn, isValidIsbn13, normalizeIsbn } from "../isbn";
 import { lookupDnb } from "./dnb";
-import { lookupGoogle } from "./google";
+import { lookupGoogle, searchGoogle } from "./google";
 import { coverFromGoogleThumbnail } from "./google-thumb";
-import { lookupOpenLibrary } from "./openlibrary";
+import { lookupOpenLibrary, searchOpenLibrary } from "./openlibrary";
 import type { BookMetadata } from "./types";
 
 export type { BookMetadata, MetadataSource } from "./types";
@@ -89,4 +89,37 @@ export async function lookupByEan(
     ]),
     sources: present.flatMap((m) => m.sources),
   };
+}
+
+/**
+ * Free-text search across sources (Google Books when a key is configured, plus
+ * keyless Open Library). Results are merged and de-duplicated by title+author.
+ */
+export async function searchBooks(query: string): Promise<BookMetadata[]> {
+  const q = query.trim();
+  if (q.length < 2) return [];
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 8000);
+  try {
+    const [g, ol] = await Promise.allSettled([
+      searchGoogle(q, controller.signal),
+      searchOpenLibrary(q, controller.signal),
+    ]);
+    const google = g.status === "fulfilled" ? g.value : [];
+    const openlib = ol.status === "fulfilled" ? ol.value : [];
+
+    // Google first (richer metadata + covers), Open Library fills the rest.
+    const seen = new Set<string>();
+    const merged: BookMetadata[] = [];
+    for (const m of [...google, ...openlib]) {
+      const key = `${m.title.toLowerCase().trim()}|${(m.authors[0] ?? "").toLowerCase().trim()}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      merged.push(m);
+    }
+    return merged.slice(0, 12);
+  } finally {
+    clearTimeout(timeout);
+  }
 }

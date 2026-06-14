@@ -8,7 +8,7 @@ import { books, copies, copyTags, tags } from "@/db/schema";
 import { requireOwner } from "@/lib/auth-helpers";
 import { saveCoverFile } from "@/lib/covers";
 import { normalizeIsbn } from "@/lib/isbn";
-import { type BookMetadata, lookupByEan } from "@/lib/metadata";
+import { type BookMetadata, lookupByEan, searchBooks } from "@/lib/metadata";
 
 /** Resolves the cover URL: an uploaded file wins over the text URL field. */
 async function resolveCoverUrl(formData: FormData): Promise<string | null> {
@@ -34,6 +34,15 @@ export async function lookupBookAction(ean: string): Promise<LookupResult> {
   const meta = await lookupByEan(ean);
   if (!meta) return { status: "notfound", ean: normalizeIsbn(ean) };
   return { status: "found", meta };
+}
+
+/** Free-text search (title/author/…) for the capture form. */
+export async function searchBooksAction(
+  query: string,
+): Promise<BookMetadata[]> {
+  await requireOwner();
+  if (!query.trim()) return [];
+  return searchBooks(query);
 }
 
 /* ----------------------------------------------------------- createCopy --- */

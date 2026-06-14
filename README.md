@@ -10,7 +10,8 @@ einem gerenderten, interaktiven Bücherregal.
 
 ## Funktionen
 
-- **Erfassen** — EAN/ISBN eingeben oder per Kamera scannen; Metadaten und Cover
+- **Erfassen** — EAN/ISBN eingeben, per Kamera scannen oder per **Titel-/Autor-
+  Volltextsuche** (Google Books / Open Library) finden; Metadaten und Cover
   werden automatisch geholt (DNB → Open Library → optional Google Books).
 - **Cover** — automatischer Abruf oder eigener Upload; die **Buchrücken-Farbe**
   wird aus der dominanten Cover-Farbe abgeleitet.

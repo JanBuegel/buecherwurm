@@ -37,7 +37,39 @@ export async function lookupGoogle(
   };
   const info = json.items?.[0]?.volumeInfo;
   if (!info?.title) return null;
+  return parseVolume(info, isbn);
+}
 
+/** Free-text search (title/author/…); returns up to `limit` candidates. */
+export async function searchGoogle(
+  query: string,
+  signal?: AbortSignal,
+  limit = 10,
+): Promise<BookMetadata[]> {
+  const apiKey = process.env.GOOGLE_BOOKS_API_KEY;
+  if (!apiKey) return [];
+
+  const url =
+    `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(
+      query,
+    )}&maxResults=${limit}&key=${apiKey}`;
+
+  const res = await fetch(url, { signal });
+  if (!res.ok) return [];
+  const json = (await res.json()) as {
+    items?: { volumeInfo?: GoogleVolumeInfo }[];
+  };
+  return (json.items ?? [])
+    .map((it) => it.volumeInfo)
+    .filter((i): i is GoogleVolumeInfo => Boolean(i?.title))
+    .map((info) => parseVolume(info));
+}
+
+/** Maps a Google volumeInfo to our shared metadata shape. */
+function parseVolume(
+  info: GoogleVolumeInfo,
+  queriedIsbn?: string,
+): BookMetadata {
   const ids = info.industryIdentifiers ?? [];
   const ean = ids.find((i) => i.type === "ISBN_13")?.identifier ?? null;
   const isbn10 = ids.find((i) => i.type === "ISBN_10")?.identifier ?? null;
@@ -48,12 +80,12 @@ export async function lookupGoogle(
     ?.replace(/^http:/, "https:")
     .replace(/&edge=curl/, "");
 
-  const normalized = normalizeIsbn(isbn);
+  const normalized = queriedIsbn ? normalizeIsbn(queriedIsbn) : "";
 
   return {
     ean: ean ?? (isValidIsbn13(normalized) ? normalized : null),
     isbn10,
-    title: info.title,
+    title: info.title ?? "",
     subtitle: info.subtitle ?? null,
     authors: info.authors ?? [],
     publisher: info.publisher ?? null,

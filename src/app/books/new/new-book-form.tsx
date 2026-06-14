@@ -11,10 +11,12 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import type { BookMetadata } from "@/lib/metadata";
 import {
   createCopyAction,
   type CreateState,
   lookupBookAction,
+  searchBooksAction,
 } from "../actions";
 import { Field, selectClass } from "../form-ui";
 import { BarcodeScanner } from "./barcode-scanner";
@@ -62,6 +64,11 @@ export function NewBookForm({
 }) {
   const [form, setForm] = useState<MetaForm>(EMPTY);
   const [lookupMsg, setLookupMsg] = useState<string | null>(null);
+  // Free-text title/author search.
+  const [query, setQuery] = useState("");
+  const [results, setResults] = useState<BookMetadata[]>([]);
+  const [searchMsg, setSearchMsg] = useState<string | null>(null);
+  const [searching, startSearch] = useTransition();
   // Local object-URL preview for a freshly picked file (shown before saving).
   const [coverPreview, setCoverPreview] = useState<string | null>(null);
   const [spineColor, setSpineColor] = useState("#8b5e3c");
@@ -129,6 +136,28 @@ export function NewBookForm({
     applyDominantColor(url, false); // local blob — no CORS issue
   }
 
+  /** Fills the form from a metadata record (lookup or search result). */
+  function applyMeta(m: BookMetadata, fallbackEan = "") {
+    if (confirmRef.current) confirmRef.current.value = ""; // identity changed
+    setForm({
+      ean: m.ean ?? fallbackEan,
+      isbn10: m.isbn10 ?? "",
+      title: m.title,
+      subtitle: m.subtitle ?? "",
+      authors: m.authors.join(", "),
+      publisher: m.publisher ?? "",
+      publishedYear: m.publishedYear ? String(m.publishedYear) : "",
+      pageCount: m.pageCount ? String(m.pageCount) : "",
+      language: m.language ?? "",
+      description: m.description ?? "",
+      coverUrl: m.coverUrl ?? "",
+      metadataSource: m.sources.join("+"),
+    });
+    // A looked-up/picked cover replaces any previously chosen file.
+    setCoverPreview(null);
+    if (m.coverUrl) applyDominantColor(m.coverUrl, true);
+  }
+
   function runLookup(codeArg?: string) {
     const code = (codeArg ?? form.ean).trim();
     if (!code) {
@@ -138,25 +167,8 @@ export function NewBookForm({
     startTransition(async () => {
       const result = await lookupBookAction(code);
       if (result.status === "found") {
-        const m = result.meta;
-        setForm({
-          ean: m.ean ?? code,
-          isbn10: m.isbn10 ?? "",
-          title: m.title,
-          subtitle: m.subtitle ?? "",
-          authors: m.authors.join(", "),
-          publisher: m.publisher ?? "",
-          publishedYear: m.publishedYear ? String(m.publishedYear) : "",
-          pageCount: m.pageCount ? String(m.pageCount) : "",
-          language: m.language ?? "",
-          description: m.description ?? "",
-          coverUrl: m.coverUrl ?? "",
-          metadataSource: m.sources.join("+"),
-        });
-        // A looked-up cover replaces any previously picked file.
-        setCoverPreview(null);
-        if (m.coverUrl) applyDominantColor(m.coverUrl, true);
-        setLookupMsg(`Gefunden über: ${m.sources.join(", ")}`);
+        applyMeta(result.meta, code);
+        setLookupMsg(`Gefunden über: ${result.meta.sources.join(", ")}`);
       } else if (result.status === "notfound") {
         setForm((f) => ({ ...EMPTY, ean: result.ean }));
         setLookupMsg(
@@ -166,6 +178,25 @@ export function NewBookForm({
         setLookupMsg("Bitte zuerst eine EAN/ISBN eingeben.");
       }
     });
+  }
+
+  function runSearch() {
+    const term = query.trim();
+    if (!term) {
+      setSearchMsg("Bitte einen Suchbegriff eingeben.");
+      return;
+    }
+    startSearch(async () => {
+      const found = await searchBooksAction(term);
+      setResults(found);
+      setSearchMsg(found.length ? null : "Keine Treffer.");
+    });
+  }
+
+  function pickResult(m: BookMetadata) {
+    applyMeta(m);
+    setResults([]);
+    setSearchMsg(`Übernommen: ${m.title}`);
   }
 
   return (
@@ -214,6 +245,81 @@ export function NewBookForm({
           </div>
           {lookupMsg ? (
             <p className="text-sm text-muted-foreground">{lookupMsg}</p>
+          ) : null}
+        </CardContent>
+      </Card>
+
+      {/* ---------------------------------------------------- search --- */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Titel / Autor suchen</CardTitle>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-3">
+          <div className="flex flex-wrap gap-2">
+            <Input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  runSearch();
+                }
+              }}
+              placeholder="z. B. Tintenherz Funke"
+              className="min-w-40 flex-1"
+            />
+            <Button
+              type="button"
+              variant="outline"
+              onClick={runSearch}
+              disabled={searching}
+            >
+              {searching ? "Suche …" : "Suchen"}
+            </Button>
+          </div>
+          {searchMsg ? (
+            <p className="text-sm text-muted-foreground">{searchMsg}</p>
+          ) : null}
+          {results.length ? (
+            <ul className="flex flex-col gap-2">
+              {results.map((m, i) => (
+                <li key={`${m.ean ?? m.title}-${i}`}>
+                  <button
+                    type="button"
+                    onClick={() => pickResult(m)}
+                    className="flex w-full items-center gap-3 rounded-lg border p-2 text-left transition-colors hover:bg-accent"
+                  >
+                    {m.coverUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={m.coverUrl}
+                        alt=""
+                        className="h-16 w-11 shrink-0 rounded border object-cover"
+                      />
+                    ) : (
+                      <div className="h-16 w-11 shrink-0 rounded border border-dashed" />
+                    )}
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate font-medium">{m.title}</p>
+                      {m.subtitle ? (
+                        <p className="truncate text-sm text-muted-foreground">
+                          {m.subtitle}
+                        </p>
+                      ) : null}
+                      <p className="truncate text-xs text-muted-foreground">
+                        {[
+                          m.authors.join(", "),
+                          m.publishedYear,
+                          m.publisher,
+                        ]
+                          .filter(Boolean)
+                          .join(" · ")}
+                      </p>
+                    </div>
+                  </button>
+                </li>
+              ))}
+            </ul>
           ) : null}
         </CardContent>
       </Card>
