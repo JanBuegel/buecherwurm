@@ -17,6 +17,7 @@ import {
 import { selectClass } from "./form-ui";
 
 type Option = { id: string; name: string };
+type TagRef = { name: string; color: string | null };
 
 export type BookListItem = {
   id: string;
@@ -27,7 +28,7 @@ export type BookListItem = {
   status: string;
   ownerName: string;
   roomName: string | null;
-  tags: string[];
+  tags: TagRef[];
 };
 
 export function BookList({
@@ -89,10 +90,13 @@ export function BookList({
 
   // Tags currently present on the selection — offered for one-click removal.
   const selectedTags = [
-    ...new Set(
-      items.filter((i) => selected.has(i.id)).flatMap((i) => i.tags),
-    ),
-  ].sort((a, b) => a.localeCompare(b, "de"));
+    ...new Map(
+      items
+        .filter((i) => selected.has(i.id))
+        .flatMap((i) => i.tags)
+        .map((t) => [t.name, t] as const),
+    ).values(),
+  ].sort((a, b) => a.name.localeCompare(b.name, "de"));
 
   return (
     <div className="flex flex-col gap-3">
@@ -152,7 +156,9 @@ export function BookList({
                   {inner}
                 </button>
               ) : (
-                <Link href={`/books/${item.id}`}>{inner}</Link>
+                <Link href={`/books/${item.id}`} className="block">
+                  {inner}
+                </Link>
               )}
             </li>
           );
@@ -165,13 +171,13 @@ export function BookList({
             {selected.size} {selected.size === 1 ? "Buch" : "Bücher"} ausgewählt
           </span>
 
-          <div className="flex flex-wrap items-end gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:flex sm:flex-wrap sm:items-end">
             <label className="flex flex-col gap-1 text-xs text-muted-foreground">
               Inhaber
               <select
                 value=""
                 disabled={pending}
-                className={selectClass}
+                className={`${selectClass} sm:w-auto`}
                 onChange={(e) => {
                   const ownerId = e.target.value;
                   if (!ownerId) return;
@@ -193,7 +199,7 @@ export function BookList({
               <select
                 value=""
                 disabled={pending}
-                className={selectClass}
+                className={`${selectClass} sm:w-auto`}
                 onChange={(e) => {
                   const value = e.target.value;
                   if (!value) return;
@@ -213,14 +219,14 @@ export function BookList({
             </label>
 
             <div className="flex items-end gap-2">
-              <label className="flex flex-col gap-1 text-xs text-muted-foreground">
+              <label className="flex min-w-0 flex-1 flex-col gap-1 text-xs text-muted-foreground sm:flex-none">
                 Tags hinzufügen
                 <Input
                   list="batch-tag-suggestions"
                   value={tagInput}
                   onChange={(e) => setTagInput(e.target.value)}
                   placeholder="Komma-getrennt"
-                  className="min-w-44"
+                  className="w-full sm:w-48"
                   onKeyDown={(e) => {
                     if (e.key === "Enter") {
                       e.preventDefault();
@@ -238,6 +244,7 @@ export function BookList({
                 type="button"
                 onClick={applyAddTags}
                 disabled={!tagInput.trim() || pending}
+                className="shrink-0"
               >
                 Hinzufügen
               </Button>
@@ -253,15 +260,24 @@ export function BookList({
                 const ids = [...selected];
                 return (
                   <button
-                    key={t}
+                    key={t.name}
                     type="button"
                     disabled={pending}
                     onClick={() =>
-                      run(() => removeTagsFromCopiesAction(ids, [t]))
+                      run(() => removeTagsFromCopiesAction(ids, [t.name]))
+                    }
+                    style={
+                      t.color
+                        ? {
+                            backgroundColor: `${t.color}22`,
+                            color: t.color,
+                            borderColor: `${t.color}55`,
+                          }
+                        : undefined
                     }
                     className="inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs hover:border-destructive hover:text-destructive disabled:opacity-50"
                   >
-                    {t} <span aria-hidden>✕</span>
+                    {t.name} <span aria-hidden>✕</span>
                   </button>
                 );
               })}
@@ -284,7 +300,7 @@ function CardInner({
 }) {
   return (
     <div
-      className={`flex gap-5 rounded-xl border bg-card p-4 shadow-sm ring-1 transition-all duration-200 ${
+      className={`flex gap-3 rounded-xl border bg-card p-3 shadow-sm ring-1 transition-all duration-200 sm:gap-5 sm:p-4 ${
         selected
           ? "ring-2 ring-primary"
           : "ring-foreground/5 hover:-translate-y-0.5 hover:shadow-md hover:ring-foreground/15"
@@ -296,10 +312,10 @@ function CardInner({
           <img
             src={item.coverUrl}
             alt=""
-            className="h-40 w-28 rounded border object-cover"
+            className="h-28 w-20 rounded border object-cover sm:h-40 sm:w-28"
           />
         ) : (
-          <div className="flex h-40 w-28 items-center justify-center rounded border border-dashed text-center text-xs text-muted-foreground">
+          <div className="flex h-28 w-20 items-center justify-center rounded border border-dashed text-center text-xs text-muted-foreground sm:h-40 sm:w-28">
             kein Cover
           </div>
         )}
@@ -341,12 +357,32 @@ function CardInner({
             <span>· 📚 Stapel</span>
           )}
           {item.tags.map((t) => (
-            <Badge key={t} variant="outline" className="font-normal">
-              {t}
-            </Badge>
+            <TagChip key={t.name} tag={t} />
           ))}
         </div>
       </div>
     </div>
+  );
+}
+
+function TagChip({ tag }: { tag: TagRef }) {
+  if (!tag.color) {
+    return (
+      <Badge variant="outline" className="font-normal">
+        {tag.name}
+      </Badge>
+    );
+  }
+  return (
+    <span
+      style={{
+        backgroundColor: `${tag.color}22`,
+        color: tag.color,
+        borderColor: `${tag.color}55`,
+      }}
+      className="rounded-full border px-2 py-0.5 text-xs font-medium"
+    >
+      {tag.name}
+    </span>
   );
 }

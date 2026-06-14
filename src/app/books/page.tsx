@@ -32,7 +32,9 @@ export default async function BooksPage({
         book: true,
         owner: { columns: { id: true, name: true } },
         room: { columns: { id: true, name: true } },
-        copyTags: { with: { tag: { columns: { id: true, name: true } } } },
+        copyTags: {
+          with: { tag: { columns: { id: true, name: true, color: true } } },
+        },
       },
     }),
     db.query.persons.findMany({
@@ -85,7 +87,7 @@ export default async function BooksPage({
 
   return (
     <main className="mx-auto flex w-full max-w-6xl flex-col gap-6 p-6 sm:p-8">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
         <div>
           <h1 className="text-2xl font-bold">Bestand</h1>
           <p className="text-sm text-muted-foreground">
@@ -146,7 +148,10 @@ export default async function BooksPage({
             status: copy.status,
             ownerName: copy.owner.name,
             roomName: copy.room?.name ?? null,
-            tags: copy.copyTags.map((ct) => ct.tag.name),
+            tags: copy.copyTags.map((ct) => ({
+              name: ct.tag.name,
+              color: ct.tag.color,
+            })),
           }))}
         />
       )}
