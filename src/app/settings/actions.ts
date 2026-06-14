@@ -217,6 +217,8 @@ export async function setTagColorAction(formData: FormData): Promise<void> {
   if (id) {
     await db.update(tags).set({ color }).where(eq(tags.id, id));
     revalidatePath("/settings/tags");
+    revalidatePath("/books");
+    revalidatePath("/rooms", "layout"); // shelf tag stickers use the colour
   }
 }
 
@@ -248,6 +250,8 @@ export async function renameTagAction(formData: FormData): Promise<void> {
     await db.update(tags).set({ name }).where(eq(tags.id, id));
   }
   revalidatePath("/settings/tags");
+  revalidatePath("/books");
+  revalidatePath("/rooms", "layout");
 }
 
 export async function deleteTagAction(formData: FormData): Promise<void> {
@@ -256,6 +260,8 @@ export async function deleteTagAction(formData: FormData): Promise<void> {
   if (id) {
     await db.delete(tags).where(eq(tags.id, id)); // copyTags cascade
     revalidatePath("/settings/tags");
+    revalidatePath("/books");
+    revalidatePath("/rooms", "layout");
   }
 }
 

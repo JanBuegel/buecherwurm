@@ -5,13 +5,9 @@ import { Input } from "@/components/ui/input";
 import { db } from "@/db";
 import { tags } from "@/db/schema";
 import { requireOwner } from "@/lib/auth-helpers";
-import {
-  createTagAction,
-  deleteTagAction,
-  renameTagAction,
-  setTagColorAction,
-} from "../actions";
+import { createTagAction, deleteTagAction, renameTagAction } from "../actions";
 import { ConfirmButton, CreateForm } from "../ui";
+import { TagColorForm } from "./tag-color-form";
 
 export default async function TagsSettingsPage() {
   await requireOwner();
@@ -47,22 +43,7 @@ export default async function TagsSettingsPage() {
           const count = tag.copyTags.length;
           return (
             <li key={tag.id} className="flex flex-wrap items-center gap-2 p-3">
-              <form
-                action={setTagColorAction}
-                className="flex items-center gap-1"
-              >
-                <input type="hidden" name="id" value={tag.id} />
-                <Input
-                  name="color"
-                  type="color"
-                  defaultValue={tag.color ?? "#64748b"}
-                  className="w-10 p-1"
-                  aria-label="Farbe"
-                />
-                <Button type="submit" size="xs" variant="ghost">
-                  Farbe
-                </Button>
-              </form>
+              <TagColorForm id={tag.id} name={tag.name} color={tag.color} />
               <form action={renameTagAction} className="flex flex-1 gap-2">
                 <input type="hidden" name="id" value={tag.id} />
                 <Input name="name" defaultValue={tag.name} className="max-w-xs" />
