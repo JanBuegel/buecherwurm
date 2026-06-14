@@ -23,6 +23,9 @@ einem gerenderten, interaktiven Bücherregal.
 - **Bücherregal** — Möbel-Editor (KALLAX/IVAR/BILLY/custom), gerenderte
   Buchrücken mit Titel/Autor, Drag & Drop vom Eingangsstapel ins Fach, sowie
   Tag-Etiketten pro Regalfach.
+- **Statistiken** — Übersichts-Kacheln, Top-Autoren/Verlage/Tags, Verteilungen
+  (Status/Zustand/Raum/Inhaber), Jahrzehnte, Sprachen, Rekorde und eine
+  Zugangs-Timeline.
 - **Rollen** — `owner` (Vollzugriff) und `viewer` (nur lesen).
 - **Backup** — CSV-Export/-Import in den Einstellungen.
 

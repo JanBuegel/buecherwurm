@@ -11,6 +11,7 @@ export async function SiteHeader() {
   const items = [
     { href: "/books", label: "Bestand" },
     { href: "/rooms", label: "Regale" },
+    { href: "/stats", label: "Statistiken" },
   ];
   if (user.role === "owner") {
     items.push({ href: "/settings", label: "Einstellungen" });
