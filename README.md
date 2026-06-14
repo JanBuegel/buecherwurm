@@ -1,13 +1,35 @@
 # 📚 Bücherwurm
 
-Tool zur Erfassung des eigenen Bücherbestands — mit Inhaber-Zuordnung, EAN-Erfassung,
-automatischem Cover-/Metadaten-Abruf, Standortverwaltung, Tags, Owner/Viewer-Rollen
-und (als Kirsche) einem gerenderten Bücherregal.
+Selbstgehostetes Tool zur Erfassung des eigenen Bücherbestands — mit
+Inhaber-Zuordnung, EAN-/Barcode-Erfassung, automatischem Cover- und
+Metadaten-Abruf, Standortverwaltung, Tags, Owner/Viewer-Rollen und (als Kirsche)
+einem gerenderten, interaktiven Bücherregal.
+
+> Lokale SQLite-Datenbank, keine Cloud-Abhängigkeit. Läuft auf einem Raspberry Pi
+> genauso wie in einem Docker-Container hinter deinem Reverse-Proxy.
+
+## Funktionen
+
+- **Erfassen** — EAN/ISBN eingeben oder per Kamera scannen; Metadaten und Cover
+  werden automatisch geholt (DNB → Open Library → optional Google Books).
+- **Cover** — automatischer Abruf oder eigener Upload; die **Buchrücken-Farbe**
+  wird aus der dominanten Cover-Farbe abgeleitet.
+- **Verwalten** — Liste mit Volltextsuche, Mehrfach-Tag-Filter, Inhaber-/Raum-/
+  Status-Filter, Detail-/Bearbeiten-/Löschen-Ansichten.
+- **Batch-Bearbeitung** — mehrere Bücher auswählen und Tags hinzufügen/entfernen
+  oder Inhaber/Raum auf einen Schlag ändern.
+- **Duplikat-Schutz** — Warnung, bevor ein bereits vorhandenes Buch erneut
+  angelegt wird.
+- **Bücherregal** — Möbel-Editor (KALLAX/IVAR/BILLY/custom), gerenderte
+  Buchrücken mit Titel/Autor, Drag & Drop vom Eingangsstapel ins Fach, sowie
+  Tag-Etiketten pro Regalfach.
+- **Rollen** — `owner` (Vollzugriff) und `viewer` (nur lesen).
+- **Backup** — CSV-Export/-Import in den Einstellungen.
 
 ## Stack
 
 - **Next.js 16** (App Router, Turbopack) + **TypeScript** + **React 19**
-- **Tailwind CSS v4** + **shadcn/ui**
+- **Tailwind CSS v4** + **shadcn/ui** + **Base UI**
 - **Drizzle ORM** + **better-sqlite3** (lokale SQLite-Datei)
 - **Auth.js v5** (Credentials: E-Mail + Passwort), Rollen `owner` / `viewer`
 - Node-Version via **mise** gepinnt (`mise.toml`)
@@ -33,8 +55,16 @@ npm run db:seed
 npm run dev
 ```
 
-Standard-Owner aus dem Seed: **jab@tickettoaster.de** / Passwort **buecherwurm**
-(nach dem ersten Login ändern).
+### Erster Login
+
+Der Seed legt einen Owner-Account an. Standardmäßig:
+
+- **E-Mail:** `owner@example.com`
+- **Passwort:** `changeme`
+
+Eigene Werte lassen sich vor dem Seed über die Umgebungsvariablen
+`SEED_OWNER_EMAIL`, `SEED_OWNER_NAME` und `SEED_OWNER_PASSWORD` setzen
+(siehe `.env.example`). **Passwort nach dem ersten Login ändern.**
 
 ## Deployment via Docker
 
@@ -67,7 +97,7 @@ Der Container läuft dann auf Port **3000**. Beim Start werden automatisch die
 | `npm run build` | Production-Build |
 | `npm run db:generate` | Migration aus dem Schema generieren |
 | `npm run db:migrate` | Migrationen anwenden |
-| `npm run db:seed` | Seed (Owner + Beispiel-Regal) |
+| `npm run db:seed` | Seed (Owner + Beispielraum) |
 | `npm run db:studio` | Drizzle Studio (DB-Browser) |
 
 ## Datenmodell (Kurzform)
@@ -76,17 +106,28 @@ Der Container läuft dann auf Port **3000**. Beim Start werden automatisch die
 - **copies** — physisches Exemplar (→ book, owner=person, room, compartment, Status, Zustand, Position)
 - **persons** — Inhaber (entkoppelt von Konten; optional mit user verknüpft)
 - **rooms** — Räume
-- **shelves** — Möbel (KALLAX/IVAR/…: roomId, kind, color, columns/rows) — Editor folgt in Phase 5
-- **compartments** — Fächer eines Möbels (Raster) — UI folgt in Phase 5
+- **shelves** — Möbel (KALLAX/IVAR/BILLY/custom: roomId, kind, color, columns/rows)
+- **compartments** — Fächer eines Möbels (Raster)
 - **tags** / **copy_tags** — frei vergebbare Tags (n:m an copies)
 - **users** — Login-Konten (Owner / Viewer)
 - **loans** — Verleih-Historie
 
-## Roadmap
+## Mitmachen
 
-1. ✅ Fundament (Scaffold, Datenmodell, Auth, Migrationen)
-2. ✅ Erfassen (EAN → Metadaten via DNB → Open Library → Google Books optional)
-3. ✅ Verwalten (Liste, Suche, Filter, Detail, Bearbeiten, Löschen)
-4. ✅ Verwaltung & Backup (Personen, Benutzer, Räume, Tags, Profil, Cover-Upload, CSV Export/Import)
-5. ✅ Fancy Bücherregal (Möbel-Editor KALLAX/IVAR/BILLY/custom, gerenderte Buchrücken, Drag & Drop vom Raum-Stapel ins Fach) — `/rooms`
-6. ⏳ Phase 6: ✅ Kamera-Barcode-Scan beim Erfassen · ⏳ Verleih, Statistiken
+Issues und Pull Requests sind willkommen. Vor dem Commit:
+
+```bash
+npm run lint
+npx tsc --noEmit
+```
+
+## Datenschutz
+
+Bücherwurm sammelt keine Telemetrie und ruft nur die konfigurierten
+Metadaten-Dienste (DNB, Open Library, optional Google Books) auf, wenn du eine
+EAN nachschlägst. Alle Daten bleiben in deiner lokalen SQLite-Datei.
+
+## Lizenz
+
+[MIT](./LICENSE) © 2026 Jan Bügel — frei nutzbar, anpassbar und weiterverteilbar
+(auch kommerziell), solange der Copyright-Hinweis erhalten bleibt.

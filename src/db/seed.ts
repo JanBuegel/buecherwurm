@@ -3,9 +3,11 @@ import { hashPassword } from "../lib/password";
 import { db } from "./index";
 import { persons, rooms, users } from "./schema";
 
-const OWNER_EMAIL = "jab@tickettoaster.de";
-const OWNER_NAME = "Jan";
-const OWNER_PASSWORD = "buecherwurm"; // change after first login
+// Configurable via env so a fresh deployment can set its own owner; the
+// defaults are deliberately generic — change the password after first login.
+const OWNER_EMAIL = process.env.SEED_OWNER_EMAIL ?? "owner@example.com";
+const OWNER_NAME = process.env.SEED_OWNER_NAME ?? "Owner";
+const OWNER_PASSWORD = process.env.SEED_OWNER_PASSWORD ?? "changeme";
 
 async function main() {
   let owner = await db.query.users.findFirst({
