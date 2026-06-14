@@ -244,13 +244,28 @@ export function EditBookForm({
               inputMode="decimal"
             />
           </Field>
-          <Field label="Rückenfarbe (Regal) — automatisch aus dem Cover">
-            <Input
-              name="spineColor"
-              type="color"
-              value={spineColor}
-              onChange={(e) => setSpineColor(e.target.value)}
-            />
+          <Field label="Rückenfarbe (Regal)">
+            <div className="flex items-center gap-2">
+              <Input
+                name="spineColor"
+                type="color"
+                value={spineColor}
+                onChange={(e) => setSpineColor(e.target.value)}
+                className="w-16 shrink-0"
+              />
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                disabled={!(coverPreview || coverUrl)}
+                onClick={() => {
+                  const src = coverPreview ?? coverUrl;
+                  if (src) applyDominantColor(src, !coverPreview);
+                }}
+              >
+                🎨 Aus Cover ermitteln
+              </Button>
+            </div>
           </Field>
           <Field label="Notiz" className="sm:col-span-2">
             <Textarea name="notes" defaultValue={initial.notes} rows={2} />
