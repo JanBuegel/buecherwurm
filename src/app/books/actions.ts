@@ -1,6 +1,6 @@
 "use server";
 
-import { eq, max } from "drizzle-orm";
+import { count, eq, max, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { db } from "@/db";
@@ -38,7 +38,12 @@ export async function lookupBookAction(ean: string): Promise<LookupResult> {
 
 /* ----------------------------------------------------------- createCopy --- */
 
-export type CreateState = { error?: string } | null;
+export type CreateState =
+  | {
+      error?: string;
+      duplicate?: { title: string; count: number };
+    }
+  | null;
 
 function parseList(raw: FormDataEntryValue | null): string[] {
   return String(raw ?? "")
@@ -113,6 +118,27 @@ export async function createCopyAction(
   const existingBook = ean
     ? await db.query.books.findFirst({ where: eq(books.ean, ean) })
     : null;
+
+  // --- warn before adding a duplicate (same EAN, or same title when no EAN) ---
+  // The client can re-submit with `confirmDuplicate=1` to proceed anyway.
+  const confirmed =
+    String(formData.get("confirmDuplicate") ?? "").trim() === "1";
+  if (!confirmed) {
+    const dupBook =
+      existingBook ??
+      (await db.query.books.findFirst({
+        where: sql`lower(${books.title}) = ${title.toLowerCase()}`,
+      }));
+    if (dupBook) {
+      const [row] = await db
+        .select({ value: count() })
+        .from(copies)
+        .where(eq(copies.bookId, dupBook.id));
+      if ((row?.value ?? 0) > 0) {
+        return { duplicate: { title: dupBook.title, count: row.value } };
+      }
+    }
+  }
 
   if (existingBook) {
     bookId = existingBook.id;

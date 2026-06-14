@@ -1,7 +1,8 @@
 "use client";
 
-import { useActionState, useState, useTransition } from "react";
+import { useActionState, useEffect, useRef, useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
+import { dominantColorFromImage } from "@/lib/dominant-color";
 import {
   Card,
   CardContent,
@@ -61,14 +62,61 @@ export function NewBookForm({
 }) {
   const [form, setForm] = useState<MetaForm>(EMPTY);
   const [lookupMsg, setLookupMsg] = useState<string | null>(null);
+  // Local object-URL preview for a freshly picked file (shown before saving).
+  const [coverPreview, setCoverPreview] = useState<string | null>(null);
+  const [spineColor, setSpineColor] = useState("#8b5e3c");
   const [pending, startTransition] = useTransition();
   const [state, formAction, submitting] = useActionState<
     CreateState,
     FormData
   >(createCopyAction, null);
+  const formRef = useRef<HTMLFormElement>(null);
+  // Carries the "user confirmed the duplicate" flag on re-submit.
+  const confirmRef = useRef<HTMLInputElement>(null);
+  const dupRef = useRef<HTMLDivElement>(null);
 
-  const set = (key: keyof MetaForm, value: string) =>
+  const set = (key: keyof MetaForm, value: string) => {
+    // Changing the book's identity invalidates a prior duplicate confirmation.
+    if ((key === "title" || key === "ean") && confirmRef.current) {
+      confirmRef.current.value = "";
+    }
     setForm((f) => ({ ...f, [key]: value }));
+  };
+
+  // Revoke the object URL when it changes or the form unmounts.
+  useEffect(() => {
+    if (!coverPreview) return;
+    return () => URL.revokeObjectURL(coverPreview);
+  }, [coverPreview]);
+
+  // Bring the duplicate warning into view as soon as it appears.
+  useEffect(() => {
+    if (state?.duplicate) {
+      dupRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  }, [state]);
+
+  /** Derives the dominant cover colour and uses it as the spine colour. */
+  function applyDominantColor(src: string, useCors: boolean) {
+    const image = new Image();
+    if (useCors) image.crossOrigin = "anonymous";
+    image.onload = () => {
+      const color = dominantColorFromImage(image);
+      if (color) setSpineColor(color);
+    };
+    image.src = src;
+  }
+
+  function onCoverFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) {
+      setCoverPreview(null);
+      return;
+    }
+    const url = URL.createObjectURL(file);
+    setCoverPreview(url);
+    applyDominantColor(url, false); // local blob — no CORS issue
+  }
 
   function runLookup(codeArg?: string) {
     const code = (codeArg ?? form.ean).trim();
@@ -94,6 +142,9 @@ export function NewBookForm({
           coverUrl: m.coverUrl ?? "",
           metadataSource: m.sources.join("+"),
         });
+        // A looked-up cover replaces any previously picked file.
+        setCoverPreview(null);
+        if (m.coverUrl) applyDominantColor(m.coverUrl, true);
         setLookupMsg(`Gefunden über: ${m.sources.join(", ")}`);
       } else if (result.status === "notfound") {
         setForm((f) => ({ ...EMPTY, ean: result.ean }));
@@ -107,8 +158,9 @@ export function NewBookForm({
   }
 
   return (
-    <form action={formAction} className="flex flex-col gap-6">
+    <form ref={formRef} action={formAction} className="flex flex-col gap-6">
       {/* hidden fields carrying looked-up metadata */}
+      <input ref={confirmRef} type="hidden" name="confirmDuplicate" />
       <input type="hidden" name="isbn10" value={form.isbn10} readOnly />
       <input type="hidden" name="coverUrl" value={form.coverUrl} readOnly />
       <input
@@ -162,10 +214,10 @@ export function NewBookForm({
         </CardHeader>
         <CardContent className="flex gap-4">
           <div className="flex shrink-0 flex-col items-center gap-2">
-            {form.coverUrl ? (
+            {coverPreview || form.coverUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
-                src={form.coverUrl}
+                src={coverPreview ?? form.coverUrl}
                 alt="Cover"
                 className="h-36 w-24 rounded border object-cover"
               />
@@ -178,6 +230,7 @@ export function NewBookForm({
               type="file"
               name="coverFile"
               accept="image/*"
+              onChange={onCoverFile}
               className="w-24 text-xs"
             />
           </div>
@@ -305,8 +358,13 @@ export function NewBookForm({
           <Field label="Kaufpreis (€)">
             <Input name="purchasePrice" placeholder="8,99" inputMode="decimal" />
           </Field>
-          <Field label="Rückenfarbe (Regal)">
-            <Input name="spineColor" type="color" defaultValue="#8b5e3c" />
+          <Field label="Rückenfarbe (Regal) — automatisch aus dem Cover">
+            <Input
+              name="spineColor"
+              type="color"
+              value={spineColor}
+              onChange={(e) => setSpineColor(e.target.value)}
+            />
           </Field>
           <Field label="Notiz" className="sm:col-span-2">
             <Textarea name="notes" rows={2} />
@@ -316,6 +374,50 @@ export function NewBookForm({
 
       {state?.error ? (
         <p className="text-sm text-destructive">{state.error}</p>
+      ) : null}
+
+      {state?.duplicate ? (
+        <div
+          ref={dupRef}
+          className="flex gap-4 rounded-xl border-2 border-amber-500 bg-amber-50 p-5 shadow-lg ring-4 ring-amber-500/20"
+        >
+          <div
+            aria-hidden
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-amber-500 text-2xl text-white"
+          >
+            ⚠️
+          </div>
+          <div className="flex flex-col gap-1">
+            <p className="text-lg font-bold text-amber-900">
+              Mögliches Duplikat
+            </p>
+            <p className="text-sm text-amber-900">
+              „{state.duplicate.title}" ist bereits{" "}
+              <strong>
+                {state.duplicate.count === 1
+                  ? "einmal"
+                  : `${state.duplicate.count}-mal`}
+              </strong>{" "}
+              im Bestand. Soll wirklich ein weiteres Exemplar angelegt werden?
+            </p>
+            <div className="mt-3 flex flex-wrap items-center gap-3">
+              <Button
+                type="button"
+                disabled={submitting}
+                className="bg-amber-600 hover:bg-amber-700"
+                onClick={() => {
+                  if (confirmRef.current) confirmRef.current.value = "1";
+                  formRef.current?.requestSubmit();
+                }}
+              >
+                {submitting ? "Speichern …" : "Ja, trotzdem anlegen"}
+              </Button>
+              <span className="text-xs text-amber-800/80">
+                Oder ändere Titel/EAN, um ein anderes Buch zu erfassen.
+              </span>
+            </div>
+          </div>
+        </div>
       ) : null}
 
       <div className="flex justify-end gap-2">

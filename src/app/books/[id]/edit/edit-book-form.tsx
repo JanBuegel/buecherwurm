@@ -1,7 +1,8 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { dominantColorFromImage } from "@/lib/dominant-color";
 import {
   Card,
   CardContent,
@@ -49,10 +50,42 @@ export function EditBookForm({
   rooms: Option[];
 }) {
   const [coverUrl, setCoverUrl] = useState(initial.coverUrl);
+  const [coverPreview, setCoverPreview] = useState<string | null>(null);
+  const [spineColor, setSpineColor] = useState(
+    initial.spineColor || "#8b5e3c",
+  );
   const [state, formAction, submitting] = useActionState<
     CreateState,
     FormData
   >(updateCopyAction, null);
+
+  // Revoke the object URL when it changes or the form unmounts.
+  useEffect(() => {
+    if (!coverPreview) return;
+    return () => URL.revokeObjectURL(coverPreview);
+  }, [coverPreview]);
+
+  /** Derives the dominant cover colour and uses it as the spine colour. */
+  function applyDominantColor(src: string, useCors: boolean) {
+    const image = new Image();
+    if (useCors) image.crossOrigin = "anonymous";
+    image.onload = () => {
+      const color = dominantColorFromImage(image);
+      if (color) setSpineColor(color);
+    };
+    image.src = src;
+  }
+
+  function onCoverFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) {
+      setCoverPreview(null);
+      return;
+    }
+    const url = URL.createObjectURL(file);
+    setCoverPreview(url);
+    applyDominantColor(url, false); // local blob — no CORS issue
+  }
 
   return (
     <form action={formAction} className="flex flex-col gap-6">
@@ -65,10 +98,10 @@ export function EditBookForm({
         </CardHeader>
         <CardContent className="flex gap-4">
           <div className="flex shrink-0 flex-col items-center gap-2">
-            {coverUrl ? (
+            {coverPreview || coverUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
-                src={coverUrl}
+                src={coverPreview ?? coverUrl}
                 alt="Cover"
                 className="h-36 w-24 rounded border object-cover"
               />
@@ -81,6 +114,7 @@ export function EditBookForm({
               type="file"
               name="coverFile"
               accept="image/*"
+              onChange={onCoverFile}
               className="w-24 text-xs"
             />
           </div>
@@ -122,7 +156,11 @@ export function EditBookForm({
               <Input
                 name="coverUrl"
                 value={coverUrl}
-                onChange={(e) => setCoverUrl(e.target.value)}
+                onChange={(e) => {
+                  setCoverUrl(e.target.value);
+                  setCoverPreview(null);
+                  if (e.target.value) applyDominantColor(e.target.value, true);
+                }}
               />
             </Field>
             <Field label="Beschreibung" className="sm:col-span-2">
@@ -206,11 +244,12 @@ export function EditBookForm({
               inputMode="decimal"
             />
           </Field>
-          <Field label="Rückenfarbe (Regal)">
+          <Field label="Rückenfarbe (Regal) — automatisch aus dem Cover">
             <Input
               name="spineColor"
               type="color"
-              defaultValue={initial.spineColor}
+              value={spineColor}
+              onChange={(e) => setSpineColor(e.target.value)}
             />
           </Field>
           <Field label="Notiz" className="sm:col-span-2">
