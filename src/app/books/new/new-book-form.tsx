@@ -65,6 +65,9 @@ export function NewBookForm({
   // Local object-URL preview for a freshly picked file (shown before saving).
   const [coverPreview, setCoverPreview] = useState<string | null>(null);
   const [spineColor, setSpineColor] = useState("#8b5e3c");
+  // Sticky owner/room — remembered across captures via sessionStorage.
+  const [ownerId, setOwnerId] = useState(defaultOwnerId);
+  const [roomId, setRoomId] = useState("none");
   const [pending, startTransition] = useTransition();
   const [state, formAction, submitting] = useActionState<
     CreateState,
@@ -88,6 +91,14 @@ export function NewBookForm({
     if (!coverPreview) return;
     return () => URL.revokeObjectURL(coverPreview);
   }, [coverPreview]);
+
+  // Restore the last-used owner/room (only if they still exist).
+  useEffect(() => {
+    const o = sessionStorage.getItem("bw:lastOwnerId");
+    if (o && persons.some((p) => p.id === o)) setOwnerId(o);
+    const r = sessionStorage.getItem("bw:lastRoomId");
+    if (r && (r === "none" || rooms.some((x) => x.id === r))) setRoomId(r);
+  }, [persons, rooms]);
 
   // Bring the duplicate warning into view as soon as it appears.
   useEffect(() => {
@@ -311,7 +322,11 @@ export function NewBookForm({
           <Field label="Inhaber *">
             <select
               name="ownerId"
-              defaultValue={defaultOwnerId}
+              value={ownerId}
+              onChange={(e) => {
+                setOwnerId(e.target.value);
+                sessionStorage.setItem("bw:lastOwnerId", e.target.value);
+              }}
               className={selectClass}
               required
             >
@@ -323,7 +338,15 @@ export function NewBookForm({
             </select>
           </Field>
           <Field label="Raum">
-            <select name="roomId" defaultValue="none" className={selectClass}>
+            <select
+              name="roomId"
+              value={roomId}
+              onChange={(e) => {
+                setRoomId(e.target.value);
+                sessionStorage.setItem("bw:lastRoomId", e.target.value);
+              }}
+              className={selectClass}
+            >
               <option value="none">— kein Raum —</option>
               {rooms.map((r) => (
                 <option key={r.id} value={r.id}>
