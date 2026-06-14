@@ -1,18 +1,17 @@
 import { asc, desc } from "drizzle-orm";
 import Link from "next/link";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { db } from "@/db";
 import { copies, persons as personsTable, rooms as roomsTable, tags as tagsTable } from "@/db/schema";
-import { statusLabel } from "@/lib/book-display";
 import { getCurrentUser, requireUser } from "@/lib/auth-helpers";
+import { BookList } from "./book-list";
 import { FilterBar } from "./filter-bar";
 
 type SearchParams = {
   q?: string;
   owner?: string;
   room?: string;
-  tag?: string;
+  tag?: string | string[];
   status?: string;
 };
 
@@ -52,6 +51,7 @@ export default async function BooksPage({
 
   // --- in-memory filtering (collection size is small) ---
   const q = sp.q?.trim().toLowerCase() ?? "";
+  const tagIds = Array.isArray(sp.tag) ? sp.tag : sp.tag ? [sp.tag] : [];
   const filtered = list.filter((copy) => {
     if (sp.owner && copy.ownerId !== sp.owner) return false;
     if (sp.room) {
@@ -59,7 +59,12 @@ export default async function BooksPage({
         return false;
     }
     if (sp.status && copy.status !== sp.status) return false;
-    if (sp.tag && !copy.copyTags.some((ct) => ct.tag.id === sp.tag)) return false;
+    // must carry *all* selected tags
+    if (
+      tagIds.length &&
+      !tagIds.every((id) => copy.copyTags.some((ct) => ct.tag.id === id))
+    )
+      return false;
     if (q) {
       const haystack = [
         copy.book.title,
@@ -75,7 +80,7 @@ export default async function BooksPage({
   });
 
   const hasFilters = Boolean(
-    sp.q || sp.owner || sp.room || sp.status || sp.tag,
+    sp.q || sp.owner || sp.room || sp.status || tagIds.length,
   );
 
   return (
@@ -127,72 +132,23 @@ export default async function BooksPage({
           ) : null}
         </div>
       ) : (
-        <ul className="grid gap-4 sm:grid-cols-2">
-          {filtered.map((copy) => {
-            const authors = copy.book.authors ?? [];
-            const tagNames = copy.copyTags.map((ct) => ct.tag.name);
-            return (
-              <li key={copy.id}>
-                <Link
-                  href={`/books/${copy.id}`}
-                  className="flex gap-5 rounded-xl border bg-card p-4 shadow-sm ring-1 ring-foreground/5 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md hover:ring-foreground/15"
-                >
-                  {copy.book.coverUrl ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={copy.book.coverUrl}
-                      alt=""
-                      className="h-40 w-28 shrink-0 rounded border object-cover"
-                    />
-                  ) : (
-                    <div className="flex h-40 w-28 shrink-0 items-center justify-center rounded border border-dashed text-center text-xs text-muted-foreground">
-                      kein Cover
-                    </div>
-                  )}
-                  <div className="flex min-w-0 flex-1 flex-col gap-1.5">
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="min-w-0">
-                        <p className="truncate text-lg font-semibold">
-                          {copy.book.title}
-                        </p>
-                        {copy.book.subtitle ? (
-                          <p className="truncate text-sm text-muted-foreground">
-                            {copy.book.subtitle}
-                          </p>
-                        ) : null}
-                        {authors.length ? (
-                          <p className="truncate text-sm text-muted-foreground">
-                            {authors.join(", ")}
-                          </p>
-                        ) : null}
-                      </div>
-                      <Badge variant="secondary" className="shrink-0">
-                        {statusLabel(copy.status)}
-                      </Badge>
-                    </div>
-                    <div className="mt-auto flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
-                      <span>👤 {copy.owner.name}</span>
-                      {copy.room ? (
-                        <span>· 📍 {copy.room.name}</span>
-                      ) : (
-                        <span>· 📚 Stapel</span>
-                      )}
-                      {tagNames.map((t) => (
-                        <Badge
-                          key={t}
-                          variant="outline"
-                          className="font-normal"
-                        >
-                          {t}
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
-                </Link>
-              </li>
-            );
-          })}
-        </ul>
+        <BookList
+          isOwner={isOwner}
+          owners={personList}
+          rooms={roomList}
+          tagSuggestions={tagList.map((t) => t.name)}
+          items={filtered.map((copy) => ({
+            id: copy.id,
+            title: copy.book.title,
+            subtitle: copy.book.subtitle,
+            authors: copy.book.authors ?? [],
+            coverUrl: copy.book.coverUrl,
+            status: copy.status,
+            ownerName: copy.owner.name,
+            roomName: copy.room?.name ?? null,
+            tags: copy.copyTags.map((ct) => ct.tag.name),
+          }))}
+        />
       )}
     </main>
   );

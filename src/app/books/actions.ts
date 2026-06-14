@@ -1,6 +1,6 @@
 "use server";
 
-import { count, eq, max, sql } from "drizzle-orm";
+import { and, count, eq, inArray, max, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { db } from "@/db";
@@ -286,6 +286,101 @@ export async function updateCopyAction(
   revalidatePath("/books");
   revalidatePath(`/books/${copyId}`);
   redirect(`/books/${copyId}`);
+}
+
+/* ---------------------------------------------------------- batchEdit --- */
+
+function cleanIds(values: string[]): string[] {
+  return [...new Set(values.map((s) => s.trim()).filter(Boolean))];
+}
+
+/** Adds one or more tags to many copies at once (existing tags are kept). */
+export async function addTagsToCopiesAction(
+  copyIds: string[],
+  tagNames: string[],
+): Promise<void> {
+  await requireOwner();
+  const ids = cleanIds(copyIds);
+  const names = cleanIds(tagNames);
+  if (!ids.length || !names.length) return;
+
+  const tagIds = await Promise.all(names.map((name) => upsertTag(name)));
+  for (const copyId of ids) {
+    for (const tagId of tagIds) {
+      await db
+        .insert(copyTags)
+        .values({ copyId, tagId })
+        .onConflictDoNothing();
+    }
+  }
+
+  revalidatePath("/books");
+  revalidatePath("/rooms", "layout"); // shelves show compartment tags
+}
+
+/** Removes the named tags from many copies at once. */
+export async function removeTagsFromCopiesAction(
+  copyIds: string[],
+  tagNames: string[],
+): Promise<void> {
+  await requireOwner();
+  const ids = cleanIds(copyIds);
+  const names = cleanIds(tagNames);
+  if (!ids.length || !names.length) return;
+
+  const tagRows = await db.query.tags.findMany({
+    where: inArray(tags.name, names),
+    columns: { id: true },
+  });
+  const tagIds = tagRows.map((t) => t.id);
+  if (!tagIds.length) return;
+
+  await db
+    .delete(copyTags)
+    .where(
+      and(inArray(copyTags.copyId, ids), inArray(copyTags.tagId, tagIds)),
+    );
+
+  revalidatePath("/books");
+  revalidatePath("/rooms", "layout");
+}
+
+/** Reassigns the owner of many copies at once. */
+export async function setOwnerForCopiesAction(
+  copyIds: string[],
+  ownerId: string,
+): Promise<void> {
+  await requireOwner();
+  const ids = cleanIds(copyIds);
+  const owner = ownerId.trim();
+  if (!ids.length || !owner) return;
+
+  await db
+    .update(copies)
+    .set({ ownerId: owner })
+    .where(inArray(copies.id, ids));
+
+  revalidatePath("/books");
+}
+
+/** Moves many copies to a room (or to the stack when null). Clears the shelf
+ *  slot, so moved books land in the target room's intake stack. */
+export async function setRoomForCopiesAction(
+  copyIds: string[],
+  roomId: string | null,
+): Promise<void> {
+  await requireOwner();
+  const ids = cleanIds(copyIds);
+  if (!ids.length) return;
+  const room = roomId && roomId.trim() && roomId !== "none" ? roomId.trim() : null;
+
+  await db
+    .update(copies)
+    .set({ roomId: room, compartmentId: null })
+    .where(inArray(copies.id, ids));
+
+  revalidatePath("/books");
+  revalidatePath("/rooms", "layout");
 }
 
 /* ----------------------------------------------------------- deleteCopy --- */

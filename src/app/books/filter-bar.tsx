@@ -21,7 +21,7 @@ export function FilterBar({
     q?: string;
     owner?: string;
     room?: string;
-    tag?: string;
+    tag?: string | string[];
     status?: string;
   };
 }) {
@@ -41,6 +41,23 @@ export function FilterBar({
     });
   }
 
+  /** Toggles one value of a multi-valued key (e.g. `tag`). */
+  function toggleMulti(key: string, value: string) {
+    const next = new URLSearchParams(params.toString());
+    const set = new Set(next.getAll(key));
+    next.delete(key);
+    if (set.has(value)) set.delete(value);
+    else set.add(value);
+    for (const v of set) next.append(key, v);
+    startTransition(() => {
+      router.replace(next.toString() ? `${pathname}?${next}` : pathname);
+    });
+  }
+
+  const activeTags = new Set(
+    Array.isArray(values.tag) ? values.tag : values.tag ? [values.tag] : [],
+  );
+
   // Debounce the free-text search.
   useEffect(() => {
     if (firstRender.current) {
@@ -53,7 +70,11 @@ export function FilterBar({
   }, [q]);
 
   const hasFilters = Boolean(
-    values.q || values.owner || values.room || values.tag || values.status,
+    values.q ||
+      values.owner ||
+      values.room ||
+      values.status ||
+      activeTags.size,
   );
 
   return (
@@ -110,22 +131,6 @@ export function FilterBar({
           ))}
         </select>
 
-        {tags.length ? (
-          <select
-            value={values.tag ?? ""}
-            onChange={(e) => apply("tag", e.target.value)}
-            className={`${selectClass} sm:w-auto`}
-            aria-label="Tag"
-          >
-            <option value="">Alle Tags</option>
-            {tags.map((t) => (
-              <option key={t.id} value={t.id}>
-                {t.name}
-              </option>
-            ))}
-          </select>
-        ) : null}
-
         {hasFilters ? (
           <button
             type="button"
@@ -139,6 +144,30 @@ export function FilterBar({
           </button>
         ) : null}
       </div>
+
+      {tags.length ? (
+        <div className="flex w-full flex-wrap items-center gap-1.5">
+          <span className="text-sm text-muted-foreground">🏷️ Tags:</span>
+          {tags.map((t) => {
+            const active = activeTags.has(t.id);
+            return (
+              <button
+                key={t.id}
+                type="button"
+                onClick={() => toggleMulti("tag", t.id)}
+                aria-pressed={active}
+                className={`rounded-full border px-2.5 py-1 text-sm transition-colors ${
+                  active
+                    ? "border-transparent bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:border-foreground/30 hover:text-foreground"
+                }`}
+              >
+                {t.name}
+              </button>
+            );
+          })}
+        </div>
+      ) : null}
     </div>
   );
 }
