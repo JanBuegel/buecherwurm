@@ -148,6 +148,7 @@ export default async function BooksPage({
             status: copy.status,
             ownerName: copy.owner.name,
             roomName: copy.room?.name ?? null,
+            read: copy.readAt != null,
             tags: copy.copyTags.map((ct) => ({
               name: ct.tag.name,
               color: ct.tag.color,

@@ -28,6 +28,7 @@ export type BookListItem = {
   status: string;
   ownerName: string;
   roomName: string | null;
+  read: boolean;
   tags: TagRef[];
 };
 
@@ -345,9 +346,17 @@ function CardInner({
               </p>
             ) : null}
           </div>
-          <Badge variant="secondary" className="shrink-0">
-            {statusLabel(item.status)}
-          </Badge>
+          <div className="flex shrink-0 items-center gap-1.5">
+            {item.read ? (
+              <span
+                title="Gelesen"
+                className="rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300"
+              >
+                ✅
+              </span>
+            ) : null}
+            <Badge variant="secondary">{statusLabel(item.status)}</Badge>
+          </div>
         </div>
         <div className="mt-auto flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
           <span>👤 {item.ownerName}</span>

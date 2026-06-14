@@ -392,6 +392,27 @@ export async function setRoomForCopiesAction(
   revalidatePath("/rooms", "layout");
 }
 
+/* --------------------------------------------------------------- read --- */
+
+/** Marks a copy as read (now) or unread (null). */
+export async function setCopyReadAction(
+  copyId: string,
+  read: boolean,
+): Promise<void> {
+  await requireOwner();
+  const id = copyId.trim();
+  if (!id) return;
+
+  await db
+    .update(copies)
+    .set({ readAt: read ? new Date() : null })
+    .where(eq(copies.id, id));
+
+  revalidatePath(`/books/${id}`);
+  revalidatePath("/books");
+  revalidatePath("/stats");
+}
+
 /* ----------------------------------------------------------- deleteCopy --- */
 
 export async function deleteCopyAction(formData: FormData): Promise<void> {

@@ -1,0 +1,1 @@
+ALTER TABLE `copies` ADD `read_at` integer;

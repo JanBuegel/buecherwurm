@@ -43,6 +43,22 @@ const PALETTE = [
 
 type Slice = { label: string; value: number; color: string };
 
+// Reading achievements — unlocked as the count / pages-read grows.
+const BOOK_TIERS = [
+  { n: 1, icon: "🌱", label: "Erstes Buch" },
+  { n: 5, icon: "📗", label: "5 gelesen" },
+  { n: 10, icon: "📚", label: "10 gelesen" },
+  { n: 25, icon: "🤓", label: "25 gelesen" },
+  { n: 50, icon: "🏆", label: "50 gelesen" },
+  { n: 100, icon: "👑", label: "100 gelesen" },
+];
+const PAGE_TIERS = [
+  { n: 1000, icon: "📄", label: "1.000 Seiten" },
+  { n: 5000, icon: "📕", label: "5.000 Seiten" },
+  { n: 10000, icon: "🔥", label: "10.000 Seiten" },
+  { n: 50000, icon: "🚀", label: "50.000 Seiten" },
+];
+
 type Row = { label: string; value: number; color?: string | null };
 
 export default async function StatsPage() {
@@ -158,6 +174,21 @@ export default async function StatsPage() {
     ? Math.round(totalValueCents / withPrice.length)
     : 0;
 
+  // reading / gamification
+  const readCopies = copies.filter((c) => c.readAt);
+  const readCount = readCopies.length;
+  const pagesRead = readCopies.reduce(
+    (s, c) => s + (c.book.pageCount ?? 0),
+    0,
+  );
+  const thisYear = new Date().getFullYear();
+  const readThisYear = readCopies.filter(
+    (c) => c.readAt && c.readAt.getFullYear() === thisYear,
+  ).length;
+  const readShare = totalCopies
+    ? Math.round((readCount / totalCopies) * 100)
+    : 0;
+
   // last 12 months timeline
   const now = new Date();
   const months: Row[] = [];
@@ -208,6 +239,45 @@ export default async function StatsPage() {
               value={`${num(avgPages)} · ${formatPrice(avgPriceCents) ?? "—"}`}
             />
           </div>
+
+          {/* ---- reading / gamification ---- */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">📖 Lesen</CardTitle>
+            </CardHeader>
+            <CardContent className="flex flex-col gap-5">
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                <ReadStat value={num(readCount)} label="gelesen" />
+                <ReadStat value={`${readShare}%`} label="vom Bestand" />
+                <ReadStat value={num(readThisYear)} label={`${thisYear}`} />
+                <ReadStat value={num(pagesRead)} label="Seiten gelesen" />
+              </div>
+
+              <div>
+                <p className="mb-2 text-sm font-medium text-muted-foreground">
+                  Erfolge
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {BOOK_TIERS.map((t) => (
+                    <Achievement
+                      key={`b${t.n}`}
+                      icon={t.icon}
+                      label={t.label}
+                      unlocked={readCount >= t.n}
+                    />
+                  ))}
+                  {PAGE_TIERS.map((t) => (
+                    <Achievement
+                      key={`p${t.n}`}
+                      icon={t.icon}
+                      label={t.label}
+                      unlocked={pagesRead >= t.n}
+                    />
+                  ))}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
 
           {/* ---- top lists ---- */}
           <div className="grid gap-4 lg:grid-cols-3">
@@ -530,6 +600,39 @@ function AreaChart({ data }: { data: Row[] }) {
         ))}
       </div>
     </div>
+  );
+}
+
+function ReadStat({ value, label }: { value: string; label: string }) {
+  return (
+    <div className="rounded-lg bg-muted/50 p-3 text-center">
+      <div className="text-2xl font-bold tabular-nums">{value}</div>
+      <div className="text-xs text-muted-foreground">{label}</div>
+    </div>
+  );
+}
+
+function Achievement({
+  icon,
+  label,
+  unlocked,
+}: {
+  icon: string;
+  label: string;
+  unlocked: boolean;
+}) {
+  return (
+    <span
+      title={unlocked ? label : `Gesperrt: ${label}`}
+      className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-sm font-medium ${
+        unlocked
+          ? "border-amber-300 bg-amber-50 text-amber-800 dark:border-amber-900 dark:bg-amber-950/50 dark:text-amber-200"
+          : "border-dashed text-muted-foreground opacity-60"
+      }`}
+    >
+      <span aria-hidden>{unlocked ? icon : "🔒"}</span>
+      {label}
+    </span>
   );
 }
 

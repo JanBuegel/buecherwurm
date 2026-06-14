@@ -159,6 +159,8 @@ export const copies = sqliteTable(
       .default("available"),
     purchasePriceCents: integer("purchase_price_cents"),
     purchaseDate: integer("purchase_date", { mode: "timestamp" }),
+    // When the copy was marked as read (gamified). Null = not read yet.
+    readAt: integer("read_at", { mode: "timestamp" }),
     notes: text("notes"),
     // Spine colour in the bookshelf render (hex). Derived from cover or chosen.
     spineColor: text("spine_color"),

@@ -19,6 +19,7 @@ import {
 } from "@/lib/book-display";
 import { getCurrentUser, requireUser } from "@/lib/auth-helpers";
 import { DeleteCopyButton } from "./delete-copy-button";
+import { ReadToggle } from "./read-toggle";
 
 export default async function CopyDetailPage({
   params,
@@ -125,6 +126,22 @@ export default async function CopyDetailPage({
             {copy.copyTags.map((ct) => (
               <TagPill key={ct.tag.id} name={ct.tag.name} color={ct.tag.color} />
             ))}
+          </div>
+          <div className="mt-1">
+            <ReadToggle
+              copyId={copy.id}
+              initiallyRead={copy.readAt != null}
+              readLabel={
+                copy.readAt
+                  ? copy.readAt.toLocaleDateString("de-DE", {
+                      day: "2-digit",
+                      month: "long",
+                      year: "numeric",
+                    })
+                  : null
+              }
+              canEdit={isOwner}
+            />
           </div>
           {siblings.length ? (
             <p className="mt-1 text-sm text-muted-foreground">

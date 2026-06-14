@@ -128,3 +128,31 @@
     @apply font-sans;
   }
 }
+
+/* Celebratory confetti burst when marking a book as read. */
+@keyframes bw-confetti {
+  from {
+    transform: translate(-50%, -50%) rotate(0deg) scale(1);
+    opacity: 1;
+  }
+  to {
+    transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy)))
+      rotate(var(--rot)) scale(0.4);
+    opacity: 0;
+  }
+}
+
+.bw-confetti-piece {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  animation-name: bw-confetti;
+  animation-timing-function: cubic-bezier(0.2, 0.7, 0.3, 1);
+  animation-fill-mode: forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bw-confetti-piece {
+    display: none;
+  }
+}
